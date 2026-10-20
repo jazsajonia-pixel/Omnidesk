@@ -3,7 +3,7 @@ import type { Context } from "hono";
 import { auth } from "./auth";
 import { requireDb } from "./db/client";
 import { member } from "./db/schema";
-import { isTenantContext, type TenantContext } from "./tenant-context";
+import type { TenantContext } from "./tenant-context";
 export { isTenantContext, type TenantContext } from "./tenant-context";
 
 export async function resolveTenant(c: Context): Promise<TenantContext | Response> {
