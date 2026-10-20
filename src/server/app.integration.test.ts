@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 type CookieJar = Map<string, string>;
 type TestApp = { request: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> };
@@ -97,4 +97,3 @@ describe.skipIf(!enabled)("tenant isolation integration", () => {
   });
 });
 
-afterAll(() => undefined);
