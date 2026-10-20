@@ -41,7 +41,7 @@ app.get("/api/dashboard/summary", async (c) => {
 app.get("/api/customers", async (c) => {
   const tenant = await resolveTenant(c);
   if (!isTenantContext(tenant)) return tenant;
-  const page = Math.max(1, Math.min(100_000, Number.parseInt(c.req.query("page") ?? "1", 10) || 1));
+  const requestedPage = Math.max(1, Math.min(100_000, Number.parseInt(c.req.query("page") ?? "1", 10) || 1));
   const pageSize = Math.max(1, Math.min(50, Number.parseInt(c.req.query("pageSize") ?? "10", 10) || 10));
   const search = (c.req.query("search") ?? "").trim().slice(0, 120);
   const archived = c.req.query("archived") === "true";
@@ -59,14 +59,16 @@ app.get("/api/customers", async (c) => {
   const whereClause = and(...conditions);
   const database = requireDb();
   const [summary] = await database.select({ total: count() }).from(customers).where(whereClause);
+  const total = Number(summary?.total ?? 0);
+  const totalPages = Math.ceil(total / pageSize);
+  const page = totalPages === 0 ? 1 : Math.min(requestedPage, totalPages);
   const rows = await database.select({
     id: customers.id, name: customers.name, email: customers.email,
     company: customers.company, createdAt: customers.createdAt, updatedAt: customers.updatedAt,
     archivedAt: customers.archivedAt,
   }).from(customers).where(whereClause).orderBy(desc(customers.createdAt))
     .limit(pageSize).offset((page - 1) * pageSize);
-  const total = Number(summary?.total ?? 0);
-  return c.json({ data: rows, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } });
+  return c.json({ data: rows, pagination: { page, pageSize, total, totalPages } });
 });
 
 app.get("/api/customers/:id", async (c) => {
