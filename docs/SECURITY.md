@@ -3,14 +3,14 @@
 ## Implemented in this checkpoint
 - Better Auth owns password hashing and session handling; no custom password/JWT implementation.
 - Organization membership is checked on the server using the authenticated user ID and active organization stored in the session.
-- Customer list queries filter by the resolved organization ID; customer creation ignores client-supplied organization IDs and uses the server-resolved tenant.
-- Zod rejects unexpected customer fields and validates payload sizes/formats.
-- A PostgreSQL-backed CI integration test verifies two workspaces cannot read each other's customer records and rejects client-supplied organization IDs.
+- Customer list, search, detail, create, update, archive, and restore operations are scoped to the resolved organization ID.
+- Customer creation rejects unexpected fields and ignores no tenant field: client-supplied organizationId is rejected by strict Zod validation.
+- Dashboard customer counts are tenant-scoped and exclude archived records.
+- PostgreSQL-backed CI integration tests verify two workspaces cannot read each other's customer records and test archive/restore behavior.
 - Secrets are server-side environment variables only.
 
 ## Still required before production
-- Apply migration to a disposable Neon database and test the hosted pooled connection.
-- Manually test sign-up/sign-in/session expiry and organization onboarding.
+- Apply migrations to a disposable Neon database and verify the hosted pooled connection.
+- Manually test sign-up/sign-in/session expiry and organization onboarding in a browser.
 - Add role permission tests, audit events, CSRF/origin review, rate limits, security headers, structured safe logs, invitation abuse controls, and dependency advisory remediation.
-- Implement customer update/archive and other module endpoints with tenant scope.
-- Do not use with real customer data until integration checks pass.
+- Do not use with real customer data until hosted database and production security checks pass.
