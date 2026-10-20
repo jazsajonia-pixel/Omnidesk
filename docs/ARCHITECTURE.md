@@ -4,7 +4,7 @@
 - Frontend: React + TypeScript + Vite + Tailwind.
 - API: Hono, mounted as a Vercel catch-all function and runnable locally with Node.
 - Auth: Better Auth email/password sessions and organization plugin.
-- Database: Neon-compatible PostgreSQL through the serverless driver and Drizzle ORM.
+- Database: PostgreSQL through a small node-postgres pool and Drizzle ORM; hosted deployments should use the pooled Neon connection string.
 - Validation: Zod.
 - Tenant boundary: API resolves the active organization from the authenticated session, verifies membership server-side, and scopes customer queries/writes to that organization.
 
