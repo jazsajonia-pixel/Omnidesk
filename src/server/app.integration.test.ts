@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 type CookieJar = Map<string, string>;
-type TestApp = { request: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> };
+type TestApp = { request: (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response> };
 
 const enabled = Boolean(process.env.DATABASE_URL && process.env.BETTER_AUTH_SECRET);
 describe.skipIf(!enabled)("tenant isolation integration", () => {
