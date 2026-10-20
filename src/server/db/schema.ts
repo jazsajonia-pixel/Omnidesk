@@ -47,7 +47,7 @@ export const invitation = pgTable("invitation", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   email: text("email").notNull(), role: text("role"), status: text("status").notNull().default("pending"),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(), createdAt: createdAt(),
   inviterId: text("inviter_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 }, (table) => [index("invitation_org_id_idx").on(table.organizationId)]);
 
