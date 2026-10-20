@@ -74,12 +74,14 @@ app.get("/api/customers", async (c) => {
 app.get("/api/customers/:id", async (c) => {
   const tenant = await resolveTenant(c);
   if (!isTenantContext(tenant)) return tenant;
+  const customerId = c.req.param("id");
+  if (!customerId) return c.json({ error: "not_found", message: "Customer not found." }, 404);
   const database = requireDb();
   const [row] = await database.select({
     id: customers.id, name: customers.name, email: customers.email, company: customers.company,
     createdAt: customers.createdAt, updatedAt: customers.updatedAt, archivedAt: customers.archivedAt,
   }).from(customers).where(and(
-    eq(customers.id, c.req.param("id")),
+    eq(customers.id, customerId),
     eq(customers.organizationId, tenant.organizationId),
     isNull(customers.archivedAt),
   )).limit(1);
@@ -112,6 +114,8 @@ app.post("/api/customers", async (c) => {
 app.patch("/api/customers/:id", async (c) => {
   const tenant = await resolveTenant(c);
   if (!isTenantContext(tenant)) return tenant;
+  const customerId = c.req.param("id");
+  if (!customerId) return c.json({ error: "not_found", message: "Customer not found." }, 404);
   let body: unknown;
   try { body = await c.req.json(); }
   catch { return c.json({ error: "invalid_json", message: "Request body must be valid JSON." }, 400); }
@@ -129,7 +133,7 @@ app.patch("/api/customers/:id", async (c) => {
 
   const database = requireDb();
   const [updated] = await database.update(customers).set(values).where(and(
-    eq(customers.id, c.req.param("id")),
+    eq(customers.id, customerId),
     eq(customers.organizationId, tenant.organizationId),
     isNull(customers.archivedAt),
   )).returning({
@@ -143,12 +147,14 @@ app.patch("/api/customers/:id", async (c) => {
 async function setCustomerArchived(c: Context, archived: boolean) {
   const tenant = await resolveTenant(c);
   if (!isTenantContext(tenant)) return tenant;
+  const customerId = c.req.param("id");
+  if (!customerId) return c.json({ error: "not_found", message: "Customer not found." }, 404);
   const database = requireDb();
   const [updated] = await database.update(customers).set({
     archivedAt: archived ? new Date() : null,
     updatedAt: new Date(),
   }).where(and(
-    eq(customers.id, c.req.param("id")),
+    eq(customers.id, customerId),
     eq(customers.organizationId, tenant.organizationId),
     archived ? isNull(customers.archivedAt) : isNotNull(customers.archivedAt),
   )).returning({ id: customers.id, name: customers.name, archivedAt: customers.archivedAt });
