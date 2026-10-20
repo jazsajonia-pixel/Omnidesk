@@ -1,0 +1,2 @@
+# Phase 1 — Foundation and design system
+Implemented slice: React, strict TypeScript, Vite, Tailwind, React Router, Lucide, workspace overview, module placeholders and honest empty states. Not implemented: public landing/pricing/auth pages, API client, reusable form/table/dialog/toast primitives, tests or browser review. Acceptance remains open until dependencies install and typecheck/build and responsive checks are run.

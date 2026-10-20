@@ -1,0 +1,2 @@
+# Phase 9 — Testing, hardening and deployment
+Not implemented. Run lint, typecheck, build, migrations, unit/integration and available E2E tests. Test two-tenant isolation and roles; inspect secrets, insecure direct object references, unprotected routes, fake production data and deployment assumptions. Document exact results and blockers.

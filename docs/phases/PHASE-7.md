@@ -1,0 +1,2 @@
+# Phase 7 — AI assistant
+Not implemented. Add optional server-only Gemini adapter, bounded structured tasks, minimum authorized tenant context, output validation, rate/input/output limits, timeout/quota handling, and safe usage metadata. App must work without a Gemini key.

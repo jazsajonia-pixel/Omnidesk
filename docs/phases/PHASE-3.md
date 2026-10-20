@@ -1,0 +1,2 @@
+# Phase 3 — Dashboard and CRM
+Not implemented. Add tenant-scoped persisted customer CRUD, search/filter/pagination, dashboard metrics from database queries, and loading/error/empty/success/archive states. Never use hardcoded business statistics.

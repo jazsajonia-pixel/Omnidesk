@@ -1,0 +1,2 @@
+# Phase 8 — Automation and plans
+Not implemented. Add validated triggers/conditions/actions, tenant-safe execution logs, idempotency and loop safeguards, confirmed manual runs, configurable plan definitions, server-enforced limits, and demo-only subscription state without a payment provider.
