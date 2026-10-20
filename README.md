@@ -2,19 +2,20 @@
 
 One workspace. Clearer operations.
 
-OmniDesk is a multi-tenant SaaS operations platform. This repository contains a React/TypeScript workspace shell plus the first backend/auth/tenant-isolation checkpoint; it is not production-ready.
+OmniDesk is a multi-tenant SaaS operations platform. This repository contains the workspace shell and an early authentication/database checkpoint; it is not production-ready.
 
-## Implemented foundation
-- React, strict TypeScript, Vite, Tailwind, React Router, and Lucide
-- Hono API entry point for Vercel Functions and local Node API server
-- Better Auth email/password sessions and organization plugin configuration
-- Neon-compatible PostgreSQL connection and Drizzle schema/migration for users, sessions, organizations, memberships, invitations, and customers
+## Implemented
+- React, strict TypeScript, Vite, Tailwind, React Router, and Lucide workspace shell
+- Sign-up/sign-in UI using Better Auth, with loading/error/success states
+- Organization list, create, and active-workspace selection UI
+- Hono API for Vercel Functions and local Node development
+- Neon-compatible PostgreSQL connection and Drizzle schema/migration for auth, organizations, memberships, invitations, and customers
 - Server-side tenant resolution and organization-scoped customer list/create endpoints
-- Zod request validation and GitHub Actions CI workflow
+- Zod validation, unit tests for tenant-context guards, and GitHub Actions CI
 
 ## Not yet verified / not implemented
-- CI commands have not yet been observed passing in this session.
-- Live database migration and Better Auth signup/signin/organization workflows are not verified.
+- Authentication, onboarding, and database flows have not been tested against a live database in this session.
+- CI for the latest auth/onboarding UI commit has not yet been observed passing.
 - No two-tenant integration test has run; do not use real customer data yet.
 - Customer update/archive, projects/tasks persistence, audit logs, file storage, AI, automations, billing, and production deployment are not implemented.
 
