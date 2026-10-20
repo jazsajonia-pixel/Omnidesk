@@ -154,6 +154,27 @@ function WorkspaceSetup({ onChanged, userName }: { onChanged: () => Promise<unkn
   </main>;
 }
 
+type AuthSessionData = NonNullable<ReturnType<typeof authClient.useSession>["data"]>;
+
+function AuthenticatedApp({ sessionData }: { sessionData: AuthSessionData }) {
+  const [workspaceName, setWorkspaceName] = useState("Active workspace");
+  const activeOrganizationId = sessionData.session.activeOrganizationId;
+
+  useEffect(() => {
+    let alive = true;
+    authClient.organization.list().then((result) => {
+      if (!alive || !result.data) return;
+      const active = result.data.find((organization) => organization.id === activeOrganizationId);
+      if (active) setWorkspaceName(active.name);
+    }).catch(() => {
+      if (alive) setWorkspaceName("Active workspace");
+    });
+    return () => { alive = false; };
+  }, [activeOrganizationId]);
+
+  return <App workspaceName={workspaceName} userName={sessionData.user.name}/>;
+}
+
 export default function AuthGate() {
   const { data: sessionData, isPending, refetch } = authClient.useSession();
   if (isPending) return <main className="auth-shell"><div className="auth-loading"><LoaderCircle className="spin" size={22}/> Checking your session…</div></main>;
@@ -161,5 +182,5 @@ export default function AuthGate() {
   if (!sessionData.session.activeOrganizationId) {
     return <WorkspaceSetup onChanged={refetch} userName={sessionData.user.name}/>;
   }
-  return <App/>;
+  return <AuthenticatedApp sessionData={sessionData}/>;
 }
