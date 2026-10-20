@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isTenantContext, type TenantContext } from "./tenant";
+import { isTenantContext, type TenantContext } from "./tenant-context";
 
 describe("tenant context guard", () => {
   it("accepts a resolved tenant context", () => {
