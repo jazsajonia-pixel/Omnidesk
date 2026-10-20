@@ -1,0 +1,4 @@
+# Database schema plan
+No migrations exist yet. Target entities: users, organizations, organization_memberships, invitations, sessions/provider identities; customers, contacts, customer notes/interactions; projects, project_members, tasks, task_comments and status history; documents and versions; automation_rules and automation_runs; audit_logs, notifications and user preferences; plans, subscriptions, usage_records; AI usage metadata and optional scoped summaries.
+
+Use UUID primary keys, foreign keys, timestamps, tenant-aware indexes/composite constraints, normalized-email uniqueness, and documented archival/deletion rules. Store object-storage keys rather than ordinary-row binary payloads. Test two organizations and differently scoped users. This schema is not implemented or tested.
