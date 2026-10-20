@@ -1,0 +1,2 @@
+# Environment configuration
+VITE_API_BASE_URL is reserved for a future API client and is currently unused. Planned server variables: DATABASE_URL, SESSION_SECRET, optional GEMINI_API_KEY, OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_BUCKET, OBJECT_STORAGE_ACCESS_KEY_ID, OBJECT_STORAGE_SECRET_ACCESS_KEY. These are not all consumed yet. Never expose server secrets through Vite-prefixed variables. .env.example contains placeholders only.
