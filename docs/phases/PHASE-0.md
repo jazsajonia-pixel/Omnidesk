@@ -1,0 +1,2 @@
+# Phase 0 — Repository audit
+The private repository had only a 10-byte README on main, with no package manifest, source, tests, migrations or CI. Work is on feat/omnidesk-mvp-foundation to avoid replacing main directly. Initial product and technical docs are being added. Revisit docs as implementation evolves.
