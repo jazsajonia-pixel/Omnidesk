@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Archive, ArrowLeft, ArrowRight, Building2, Check, ChevronLeft, ChevronRight, LoaderCircle, Pencil, Plus, RotateCcw, Search, Users, X } from "lucide-react";
+import { Archive, ArrowRight, Building2, Check, ChevronLeft, ChevronRight, LoaderCircle, Pencil, Plus, RotateCcw, Search, Users, X } from "lucide-react";
 import {
   archiveCustomer, createCustomer, listCustomers, restoreCustomer, updateCustomer,
   type Customer, type CustomerInput,
