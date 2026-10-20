@@ -1,0 +1,2 @@
+# Phase 5 — Audit, notifications and settings
+Not implemented. Add append-only audit records for significant events, tenant-safe notifications, user preferences, organization timezone/settings, and paginated audit history.
