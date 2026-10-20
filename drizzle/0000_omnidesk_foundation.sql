@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS "invitation" (
   "id" text PRIMARY KEY NOT NULL,
   "organization_id" text NOT NULL REFERENCES "organization"("id") ON DELETE CASCADE,
   "email" text NOT NULL, "role" text, "status" text DEFAULT 'pending' NOT NULL,
-  "expires_at" timestamptz NOT NULL,
+  "expires_at" timestamptz NOT NULL, "created_at" timestamptz DEFAULT now() NOT NULL,
   "inviter_id" text NOT NULL REFERENCES "user"("id") ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS "invitation_org_id_idx" ON "invitation" ("organization_id");
