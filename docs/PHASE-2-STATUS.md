@@ -1,24 +1,22 @@
 # Phase 2 status — auth, database, tenant boundary
 
-## Implemented in this checkpoint
+## Implemented
 - Better Auth server configuration with email/password and organization plugin.
 - React sign-up/sign-in UI with loading, success, and error states.
 - Workspace onboarding: list existing organizations, create a workspace, and select an active organization.
 - Active workspace name and signed-in member are shown in the workspace shell.
-- Neon-compatible PostgreSQL connection and Drizzle schema/migration.
-- Hono API entry point for Vercel Functions and a local Node API server.
+- PostgreSQL/Drizzle schema and initial SQL migration.
+- Hono API entry point for Vercel Functions and local Node development.
 - Health and current-session endpoints.
 - Tenant guard derives the active organization from the authenticated server-side session and confirms membership in PostgreSQL.
 - Customer list/create endpoints scope every customer query/write to that resolved organization.
-- Zod request validation, tenant-context unit tests, and GitHub Actions CI.
+- Zod request validation, tenant-context unit tests, and a PostgreSQL-backed two-tenant integration test in CI.
 
-## Not yet verified
-The CI run for this UI checkpoint has not yet completed. No live database migration, signup/sign-in flow, organization onboarding, or two-organization integration test has been executed. The initial backend checkpoint CI passed after fixing dependency and TypeScript issues, but this new UI change requires its own CI result.
+## Verified
+Latest CI passed on 2026-10-20: dependency installation, SQL migration against a temporary PostgreSQL 16 service, server/frontend typecheck, ESLint, tests (including two-user/two-workspace tenant isolation), and production build. The test confirms one workspace cannot read the other workspace's customer and rejects a forged organizationId in a customer-create payload.
 
-## Before real data
-1. Set DATABASE_URL, BETTER_AUTH_SECRET (a random secret), and BETTER_AUTH_URL on the server only.
-2. Apply the SQL migration to a disposable Neon branch first.
-3. Verify Better Auth's generated schema expectations against the installed version.
-4. Test signup, login, session expiry, organization creation/selection, and customer access with two separate organizations.
-5. Add integration tests that prove a user from organization A cannot list/write organization B's records.
-6. Never expose the database URL or auth secret through VITE_ variables.
+## Still required before production
+- Apply migration to a disposable Neon branch and verify the hosted pooled connection.
+- Manually verify sign-up/sign-in/sign-out/session expiry and workspace onboarding in a browser.
+- Add customer update/archive, audit events, role policy tests, rate limits, CSRF/origin review, security headers, safe logs, invitation abuse controls, and dependency advisory remediation.
+- Never expose the database URL or auth secret through VITE_ variables. Do not use real customer data until production security checks pass.
