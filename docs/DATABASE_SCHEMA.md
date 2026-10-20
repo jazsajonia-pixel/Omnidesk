@@ -1,16 +1,18 @@
 # Database schema status
 
-An initial SQL migration is present at drizzle/0000_omnidesk_foundation.sql. Drizzle schema is defined in src/server/db/schema.ts.
+Drizzle schema is defined in src/server/db/schema.ts. SQL migrations:
+- drizzle/0000_omnidesk_foundation.sql — auth, organizations, memberships, invitations, customers.
+- drizzle/0001_customers_archive.sql — customer soft-archive column and index.
 
 ## Current tables
 - user, session, account, verification — Better Auth identity/session persistence.
-- organization, member, invitation — Better Auth organization and membership model.
-- customers — tenant-owned customer records with organization_id foreign key.
+- organization, member, invitation — organization and membership model.
+- customers — tenant-owned records with organization_id, name, email, company, created/updated timestamps, and nullable archived_at.
 
-Tenant-owned customer indexes include organization ID with creation timestamp and name. Every customer list/create endpoint must derive organization ID from the authenticated server-side session and confirmed membership.
+Customer indexes support tenant-scoped date ordering, name lookup, and active/archive filtering. List/search/count/detail/update/archive/restore queries are constrained by the authenticated active organization. Dashboard summary counts active customers for that tenant.
 
 ## Planned next
 Projects, project members, tasks, comments/status history, customer contacts/notes/interactions, documents and versions, automation rules/runs, audit logs, notifications, preferences, plans/subscriptions, usage records, and AI usage metadata.
 
 ## Verification status
-The migration has not been applied to a live or disposable PostgreSQL/Neon database. Verify Better Auth schema/plugin compatibility against the installed version and add a two-organization integration test before handling real tenant data.
+CI applies both migrations to a clean PostgreSQL 16 database and runs two-tenant integration tests. A disposable Neon database and hosted pooled connection have not yet been verified.

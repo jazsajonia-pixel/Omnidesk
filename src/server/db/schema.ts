@@ -56,6 +56,11 @@ export const customers = pgTable("customers", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(), email: text("email"), company: text("company"),
   createdAt: createdAt(), updatedAt: updatedAt(),
-}, (table) => [index("customers_org_created_idx").on(table.organizationId, table.createdAt), index("customers_org_name_idx").on(table.organizationId, table.name)]);
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+  index("customers_org_created_idx").on(table.organizationId, table.createdAt),
+  index("customers_org_name_idx").on(table.organizationId, table.name),
+  index("customers_org_archived_created_idx").on(table.organizationId, table.archivedAt, table.createdAt),
+]);
 
 export const schema = { user, session, account, verification, organization, member, invitation, customers };
