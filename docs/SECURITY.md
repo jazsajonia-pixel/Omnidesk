@@ -1,0 +1,4 @@
+# Security requirements and status
+Required: maintained auth/session solution; server-derived organization membership; centralized permissions; server-side validation; parameterized queries; CSRF defenses and secure cookies where applicable; auth/AI rate limits; tenant scope for queries, exports, AI retrieval, files, jobs, and notifications; bounded uploads; private storage and protected links; safe logs; confirmation for destructive actions; separate platform-admin role and auditable support access.
+
+Commit placeholder names only in .env.example. Never commit secrets, tokens, production data, or private operational records. Current foundation has no backend, authentication, database, storage, AI, billing, or authorization implementation. Do not use with real customer data.
