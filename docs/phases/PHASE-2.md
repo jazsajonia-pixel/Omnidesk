@@ -1,0 +1,2 @@
+# Phase 2 — Database, authentication, organizations
+Not implemented. Add maintained auth, secure sessions, PostgreSQL/Drizzle migrations, organization onboarding/membership, centralized role helpers, development seed, and cross-tenant authorization tests. Do not enable real tenant data before those tests pass.
