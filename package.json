@@ -36,7 +36,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     
     "dotenv": "^16.4.7",
-    "drizzle-kit": "1.0.0-rc.5-5935859",
+    "drizzle-kit": "0.31.11",
     "eslint": "^9.16.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.16",
