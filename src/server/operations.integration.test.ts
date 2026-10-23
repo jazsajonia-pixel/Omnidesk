@@ -145,6 +145,57 @@ describe.skipIf(!enabled)("operations suite integration", () => {
     expect((await request("/api/tasks", { method: "POST", jar: guest.jar, body: { title: "Now allowed" } })).status).toBe(201);
   });
 
+  async function twoOwnerWorkspace(label: string) {
+    const a = await owner(label);
+    const b = await signUp(label + "Second");
+    const invitationId = (await json<{ data: { id: string } }>(request("/api/team/invitations", { method: "POST", jar: a.jar, body: { email: b.email, role: "member" } }))).data.id;
+    expect((await request("/api/invitations/" + invitationId + "/accept", { method: "POST", jar: b.jar })).status).toBe(200);
+    expect((await request("/api/auth/organization/set-active", { method: "POST", jar: b.jar, body: { organizationId: a.organizationId } })).status).toBeLessThan(300);
+    const members = (await json<{ data: { members: { id: string; email: string }[] } }>(request("/api/team", { jar: a.jar }))).data.members;
+    const aId = members.find((m) => m.email !== b.email)!.id;
+    const bId = members.find((m) => m.email === b.email)!.id;
+    expect((await request("/api/team/members/" + bId, { method: "PATCH", jar: a.jar, body: { role: "owner" } })).status).toBe(200);
+    return { a, b, aId, bId };
+  }
+  const ownersLeft = async (jar: CookieJar) => (await json<{ data: { members: { role: string }[] } }>(request("/api/team", { jar }))).data.members.filter((m) => m.role === "owner").length;
+
+  it("never lets simultaneous demotions or departures remove the last owner", async () => {
+    for (let round = 0; round < 4; round++) {
+      // Both owners demote each other at the same moment.
+      const w = await twoOwnerWorkspace("RaceDemote" + round);
+      const results = await Promise.all([
+        request("/api/team/members/" + w.bId, { method: "PATCH", jar: w.a.jar, body: { role: "admin" } }),
+        request("/api/team/members/" + w.aId, { method: "PATCH", jar: w.b.jar, body: { role: "admin" } }),
+      ]);
+      // The loser is refused either as "last owner" (409) or because it's no longer an owner (403).
+      expect(results.filter((r) => r.status === 200)).toHaveLength(1);
+      expect(results.every((r) => [200, 403, 409].includes(r.status))).toBe(true);
+      expect(await ownersLeft(results[0].status === 200 ? w.a.jar : w.b.jar)).toBe(1);
+
+      // Both owners leave at the same moment.
+      const v = await twoOwnerWorkspace("RaceLeave" + round);
+      const left = await Promise.all([
+        request("/api/team/members/" + v.aId, { method: "DELETE", jar: v.a.jar }),
+        request("/api/team/members/" + v.bId, { method: "DELETE", jar: v.b.jar }),
+      ]);
+      expect(left.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect(await ownersLeft(left[0].status === 200 ? v.b.jar : v.a.jar)).toBe(1);
+    }
+  });
+
+  it("accepts an invitation exactly once even when the link is opened twice at once", async () => {
+    const a = await owner("RaceInvite");
+    const guest = await signUp("RaceGuest");
+    const invitationId = (await json<{ data: { id: string } }>(request("/api/team/invitations", { method: "POST", jar: a.jar, body: { email: guest.email, role: "member" } }))).data.id;
+    const results = await Promise.all([1, 2, 3].map(() => request("/api/invitations/" + invitationId + "/accept", { method: "POST", jar: guest.jar })));
+    const statuses = results.map((r) => r.status).sort();
+    expect(statuses).toEqual([200, 404, 404]);
+    const team = await json<{ data: { members: { email: string }[] } }>(request("/api/team", { jar: a.jar }));
+    expect(team.data.members.filter((m) => m.email === guest.email)).toHaveLength(1);
+    const activity = await json<{ data: { action: string }[] }>(request("/api/workspace/activity", { jar: a.jar }));
+    expect(activity.data.filter((x) => x.action === "team.joined")).toHaveLength(1);
+  });
+
   it("creates a seeded demo workspace with a session", async () => {
     const jar: CookieJar = new Map();
     const res = await request("/api/demo", { method: "POST", jar });
