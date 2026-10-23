@@ -24,7 +24,14 @@ const taskInput = z.object({
   dueDate: z.string().regex(isoDate, "Use a valid date.").nullable().optional().or(z.literal("")),
 }).strict();
 const taskUpdateInput = taskInput.partial().strict();
-const moveInput = z.object({ status: z.enum(TASK_STATUSES), position: z.number().int().min(0).max(100_000) }).strict();
+// `beforeId` / `afterId` anchor the drop next to a visible card. Stored positions can have
+// gaps (deletes, status edits), so anchors are preferred; `position` is the fallback index.
+const moveInput = z.object({
+  status: z.enum(TASK_STATUSES),
+  position: z.number().int().min(0).max(100_000).optional(),
+  beforeId: z.string().min(1).max(100).nullish(),
+  afterId: z.string().min(1).max(100).nullish(),
+}).strict();
 
 const columns = {
   id: tasks.id, title: tasks.title, description: tasks.description, status: tasks.status, priority: tasks.priority,
@@ -162,7 +169,12 @@ taskRoutes.post("/:id/move", async (c) => {
       .where(and(eq(tasks.organizationId, tenant.organizationId), eq(tasks.status, parsed.data.status), ne(tasks.id, existing.id)))
       .orderBy(asc(tasks.position), asc(tasks.createdAt));
     const ordered = column.map((row) => row.id);
-    ordered.splice(Math.min(parsed.data.position, ordered.length), 0, existing.id);
+    const beforeIndex = parsed.data.beforeId ? ordered.indexOf(parsed.data.beforeId) : -1;
+    const afterIndex = parsed.data.afterId ? ordered.indexOf(parsed.data.afterId) : -1;
+    const insertAt = beforeIndex >= 0 ? beforeIndex
+      : afterIndex >= 0 ? afterIndex + 1
+      : Math.min(parsed.data.position ?? ordered.length, ordered.length);
+    ordered.splice(insertAt, 0, existing.id);
     if (ordered.length) {
       const cases = sql.join(ordered.map((id, index) => sql`when ${id} then ${index}::integer`), sql` `);
       await tx.update(tasks).set({ position: sql`case ${tasks.id} ${cases} end` })

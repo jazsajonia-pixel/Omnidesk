@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CalendarDays, CheckSquare, Columns3, Download, List, Plus, Search, X } from "lucide-react";
 import { api, type Task, type TaskStatus } from "../lib/api";
 import { TASK_PRIORITIES, TASK_STATUSES, dueLabel, errorMessage, label } from "../lib/format";
+import { applyMove, keyboardMove, planMove, type MoveKey, type MovePlan } from "../lib/board";
 import { useAsync } from "../lib/useAsync";
 import { useWorkspace } from "../lib/workspace";
 import { Avatar, Badge, Button, EmptyState, ErrorState, IconButton, PageHeader, Segmented, Skeleton } from "../components/ui";
@@ -11,10 +12,18 @@ import { TaskDialog, useTaskOptions } from "../components/TaskDialog";
 type View = "board" | "list";
 const VIEW_KEY = "omnidesk-task-view";
 
-function TaskCard({ task, draggable, onOpen, onDragStart, onDragEnd, dragging }: { task: Task; draggable: boolean; onOpen: () => void; onDragStart: (e: DragEvent) => void; onDragEnd: () => void; dragging: boolean }) {
+const MOVE_KEYS: MoveKey[] = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+
+function TaskCard({ task, draggable, onOpen, onDragStart, onDragEnd, onMoveKey, dragging }: { task: Task; draggable: boolean; onOpen: () => void; onDragStart: (e: DragEvent) => void; onDragEnd: () => void; onMoveKey: (key: MoveKey) => void; dragging: boolean }) {
   const due = dueLabel(task.dueDate, task.status === "done");
   return <article className={"task-card" + (dragging ? " dragging" : "") + (task.status === "done" ? " is-done" : "")} draggable={draggable} onDragStart={onDragStart} onDragEnd={onDragEnd} data-task-id={task.id}>
-    <button type="button" className="task-card-button" onClick={onOpen}>
+    <button type="button" className="task-card-button" onClick={onOpen} data-focus-task={task.id}
+      aria-describedby={draggable ? "board-move-hint" : undefined}
+      onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+        if (!draggable || !e.altKey || e.ctrlKey || e.metaKey || !MOVE_KEYS.includes(e.key as MoveKey)) return;
+        e.preventDefault();
+        onMoveKey(e.key as MoveKey);
+      }}>
       <span className="task-card-top"><span className={"prio prio-" + task.priority}>{label(TASK_PRIORITIES, task.priority)}</span>{task.projectName && <span className="task-project">{task.projectName}</span>}</span>
       <strong>{task.title}</strong>
       <span className="task-card-foot">
@@ -37,6 +46,8 @@ export default function TasksPage() {
   const dragRef = useRef<string | null>(null);
   const setDragId = (id: string | null) => { dragRef.current = id; setDragIdState(id); };
   const [dropTarget, setDropTarget] = useState<{ status: TaskStatus; index: number } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const focusAfterMove = useRef<string | null>(null);
   const project = params.get("project") ?? "";
   const assignee = params.get("assignee") ?? "";
   const priority = params.get("priority") ?? "";
@@ -70,30 +81,49 @@ export default function TasksPage() {
     return { status, index: index === -1 ? cards.length : index };
   }
 
+  async function commitMove(task: Task, plan: MovePlan) {
+    if (!data) return;
+    const status = plan.status as TaskStatus;
+    const previous = data;
+    setData(applyMove(data, columns, task.id, plan));
+    const target = columns.find((c) => c.value === status)!;
+    setAnnouncement(task.title + " moved to " + label(TASK_STATUSES, status) + ", position " + (plan.index + 1) + " of " + (target.tasks.filter((t) => t.id !== task.id).length + 1) + ".");
+    try {
+      await api.moveTask(task.id, { status, beforeId: plan.beforeId, afterId: plan.afterId });
+      if (task.status !== status) notify(status === "done" ? "Nice — task completed" : "Moved to " + label(TASK_STATUSES, status));
+      bumpData();
+    } catch (reason) {
+      setData(previous);
+      setAnnouncement("Move failed. " + errorMessage(reason));
+      notify(errorMessage(reason), "error");
+    }
+  }
+
   async function drop(status: TaskStatus, visibleIndex: number) {
     const task = data?.find((t) => t.id === dragRef.current);
     setDragId(null);
     setDropTarget(null);
-    if (!task || !data) return;
-    const column = columns.find((c) => c.value === status)!.tasks.filter((t) => t.id !== task.id);
-    const current = columns.find((c) => c.value === task.status)!.tasks.findIndex((t) => t.id === task.id);
-    if (task.status === status && current === visibleIndex) return;
-    // Translate the visible slot into the server's full-column index (filters can hide tasks).
-    const before = column[visibleIndex];
-    let position = before ? before.position : (column.at(-1)?.position ?? -1) + 1;
-    if (task.status === status && before && task.position < before.position) position -= 1;
-    position = Math.max(0, position);
-    const previous = data;
-    const reordered = [...column];
-    reordered.splice(visibleIndex, 0, { ...task, status });
-    const others = data.filter((t) => t.status !== status && t.id !== task.id);
-    setData([...others, ...reordered.map((t, i) => ({ ...t, position: i }))]);
-    try {
-      await api.moveTask(task.id, status, position);
-      if (task.status !== status) notify(status === "done" ? "Nice — task completed" : "Moved to " + label(TASK_STATUSES, status));
-      bumpData();
-    } catch (reason) { setData(previous); notify(errorMessage(reason), "error"); }
+    if (!task) return;
+    const plan = planMove(columns, task.id, status, visibleIndex);
+    if (plan) await commitMove(task, plan);
   }
+
+  function moveWithKeyboard(task: Task, key: MoveKey) {
+    const plan = keyboardMove(columns, task.id, key);
+    if (!plan) { setAnnouncement(task.title + " can't move further that way."); return; }
+    focusAfterMove.current = task.id;
+    void commitMove(task, plan);
+  }
+
+  // Keep keyboard focus on the moved card after it re-renders in its new column.
+  useEffect(() => {
+    const id = focusAfterMove.current;
+    if (!id) return;
+    const el = document.querySelector<HTMLElement>('[data-focus-task="' + CSS.escape(id) + '"]');
+    if (!el) return;
+    focusAfterMove.current = null;
+    if (document.activeElement !== el) el.focus();
+  }, [data]);
 
   async function quickStatus(task: Task, status: TaskStatus) {
     try { await api.updateTask(task.id, { status }); bumpData(); }
@@ -139,7 +169,8 @@ export default function TasksPage() {
             {dropTarget?.status === col.value && dropTarget.index === index && dragId !== task.id && <div className="drop-marker"/>}
             <TaskCard task={task} draggable={canWrite} dragging={dragId === task.id} onOpen={() => setDialog(task)}
               onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", task.id); setDragId(task.id); }}
-              onDragEnd={() => { setDragId(null); setDropTarget(null); }}/>
+              onDragEnd={() => { setDragId(null); setDropTarget(null); }}
+              onMoveKey={(key) => moveWithKeyboard(task, key)}/>
           </div>)}
           {dropTarget?.status === col.value && dropTarget.index >= col.tasks.filter((t) => t.id !== dragId).length && <div className="drop-marker"/>}
           {col.tasks.length === 0 && <p className="column-empty">{filtersActive ? "No matching tasks" : "Nothing here yet"}</p>}
@@ -162,7 +193,8 @@ export default function TasksPage() {
           })}
         </div>}
     </section>}
-    {view === "board" && data && data.length > 0 && <p className="muted small hint-line"><Columns3 size={14}/> Tip: on touch devices, open a task to change its status.</p>}
+    {view === "board" && data && data.length > 0 && <p className="muted small hint-line" id="board-move-hint"><Columns3 size={14}/> {canWrite ? "Tip: focus a card and press Alt + arrow keys to move it (Alt + Home/End for top/bottom). On touch devices, open a task to change its status." : "Tip: open a task to see its details."}</p>}
+    <p className="sr-only" role="status" aria-live="polite">{announcement}</p>
     {dialog && <TaskDialog task={"id" in dialog ? dialog : null} defaults={"id" in dialog ? undefined : { status: dialog.status, projectId: project && project !== "none" ? project : undefined }} onClose={closeDialog} onSaved={() => { closeDialog(); bumpData(); }}/>}
   </div>;
 }

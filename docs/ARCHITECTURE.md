@@ -13,7 +13,7 @@ Browser → origin check (mutations) → Better Auth session → `resolveTenant(
 - `/api/workspace` (GET/PATCH), `/dashboard`, `/activity`, `/sample-data`
 - `/api/customers` (+ `/options`, `/:id`, `/:id/notes`, `/:id/archive`, `/:id/restore`)
 - `/api/projects` (+ `/options`, `/:id`, `/:id/archive`, `/:id/restore`)
-- `/api/tasks` (+ `/:id`, `/:id/move`)
+- `/api/tasks` (+ `/:id`, `/:id/move` with `{ status, beforeId?, afterId?, position? }`)
 - `/api/documents` (+ `/:id`)
 - `/api/team` (+ `/options`, `/invitations`, `/members/:id`), `/api/invitations/:id` (+ `/accept`)
 - `/api/search`, `/api/reports`, `/api/export/{customers,projects,tasks}.csv`

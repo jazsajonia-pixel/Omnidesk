@@ -89,6 +89,31 @@ describe.skipIf(!enabled)("operations suite integration", () => {
     expect(otherActivity.data).toEqual([]);
   });
 
+  it("places board moves by neighbour anchors even when stored positions have gaps", async () => {
+    const a = await owner("AnchorOwner");
+    const b = await owner("AnchorOther");
+    const ids: Record<string, string> = {};
+    for (const title of ["A", "B", "C", "D"]) {
+      ids[title] = (await json<{ data: { id: string } }>(request("/api/tasks", { method: "POST", jar: a.jar, body: { title } }))).data.id;
+    }
+    const foreign = (await json<{ data: { id: string } }>(request("/api/tasks", { method: "POST", jar: b.jar, body: { title: "Foreign" } }))).data.id;
+    expect((await request("/api/tasks/" + ids.B, { method: "DELETE", jar: a.jar })).status).toBeLessThan(300);
+    const todo = async () => (await json<{ data: { id: string; position: number }[] }>(request("/api/tasks?status=todo", { jar: a.jar }))).data;
+    // Column is now A(0), C(2), D(3): the stored position of C no longer equals its index.
+    expect((await todo()).map((t) => t.position)).toEqual([0, 2, 3]);
+    const move = (id: string, body: unknown) => request("/api/tasks/" + id + "/move", { method: "POST", jar: a.jar, body });
+    expect((await move(ids.D, { status: "todo", beforeId: ids.C })).status).toBe(200);
+    expect((await todo()).map((t) => t.id)).toEqual([ids.A, ids.D, ids.C]);
+    expect((await move(ids.A, { status: "todo", afterId: ids.C })).status).toBe(200);
+    expect((await todo()).map((t) => t.id)).toEqual([ids.D, ids.C, ids.A]);
+    // Anchors from another workspace are ignored; the task falls back to the end.
+    expect((await move(ids.D, { status: "todo", beforeId: foreign })).status).toBe(200);
+    expect((await todo()).map((t) => t.id)).toEqual([ids.C, ids.A, ids.D]);
+    // The original numeric API still works.
+    expect((await move(ids.D, { status: "todo", position: 0 })).status).toBe(200);
+    expect((await todo()).map((t) => t.id)).toEqual([ids.D, ids.C, ids.A]);
+  });
+
   it("invites a viewer, denies writes for that role, and protects the last owner", async () => {
     const a = await owner("TeamOwner");
     const guest = await signUp("TeamViewer");
