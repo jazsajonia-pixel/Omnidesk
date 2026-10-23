@@ -112,7 +112,8 @@ export const api = {
   task: (id: string) => request<{ data: Task }>("/api/tasks/" + encodeURIComponent(id)),
   createTask: (input: TaskInput) => request<{ data: { id: string; title: string } }>("/api/tasks", json("POST", input)),
   updateTask: (id: string, input: Partial<TaskInput>) => request<{ data: { id: string; status: TaskStatus } }>("/api/tasks/" + encodeURIComponent(id), json("PATCH", input)),
-  moveTask: (id: string, status: TaskStatus, position: number) => request("/api/tasks/" + encodeURIComponent(id) + "/move", json("POST", { status, position })),
+  moveTask: (id: string, move: { status: TaskStatus; beforeId?: string | null; afterId?: string | null; position?: number }) =>
+    request("/api/tasks/" + encodeURIComponent(id) + "/move", json("POST", move)),
   deleteTask: (id: string) => request("/api/tasks/" + encodeURIComponent(id), json("DELETE")),
 
   documents: (params: { search?: string; projectId?: string } = {}, signal?: AbortSignal) => request<{ data: DocumentSummary[] }>("/api/documents" + qs(params), { signal }),

@@ -8,6 +8,7 @@
 - [x] Roles and team management: invitations by link, role changes, last-owner protection
 - [x] Reports, global search / command palette, demo workspace, light and dark themes
 - [x] Database-backed auth rate limiting, origin checks on mutating requests, CSP/HSTS headers
+- [x] Keyboard board moves (Alt + arrow keys, Alt + Home/End) with screen-reader announcements; moves anchor to neighbour cards so gaps in stored positions no longer misplace drops
 - [x] Browser QA on desktop and 375px mobile in both themes; integration tests for the core flows
 
 ## Later
@@ -16,4 +17,3 @@
 - [ ] Phase 7: optional AI assistant with scoped retrieval and human approval
 - [ ] Phase 8: automations with dry-run/approval and execution history
 - [ ] Phase 9: billing and usage limits
-- [ ] Keyboard-only alternative for moving tasks between board columns (today: edit the status in the task dialog or list view)
