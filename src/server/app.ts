@@ -7,6 +7,7 @@ import { auth } from "./auth";
 import { requireDb } from "./db/client";
 import { customers } from "./db/schema";
 import { isTenantContext, resolveTenant } from "./tenant";
+import { securityHeaders } from "./security-headers";
 
 const customerInput = z.object({
   name: z.string().trim().min(1).max(160),
@@ -16,6 +17,7 @@ const customerInput = z.object({
 const customerUpdateInput = customerInput.partial().strict();
 
 export const app = new Hono();
+app.use("*", securityHeaders);
 app.get("/api/health", (c) => c.json({ status: "ok", service: "omnidesk-api" }));
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
