@@ -1,2 +1,2 @@
 # Phase 5 — Audit, notifications and settings
-Not implemented. Add append-only audit records for significant events, tenant-safe notifications, user preferences, organization timezone/settings, and paginated audit history.
+Implemented in v1.0: activity log, notifications menu, profile/theme/workspace settings. Not yet: per-user notification preferences, organization timezone.

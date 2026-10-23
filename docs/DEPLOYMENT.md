@@ -1,8 +1,9 @@
-# Deployment plan
+# Deployment
 
-- Target: Vercel for the Vite frontend and Hono API function, Neon PostgreSQL for data, using its pooled connection endpoint with the node-postgres driver.
-- Install dependencies with npm install and build with npm run build. CI also runs typecheck, lint, tests, and build.
-- Configure DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL, and APP_ORIGIN as server/environment variables in Vercel. Never add secrets to VITE-prefixed variables or commit production credentials.
-- Apply and verify migrations against a disposable Neon branch before production.
-- The current checkpoint is not production-ready: CI has not yet been observed passing, authentication flows and migrations are not verified, and cross-tenant integration tests remain required.
-- Do not deploy with real customer data until Phase 2 security acceptance criteria pass.
+- **Hosting:** Vercel project `omnidesk`. The Vite build is served statically; `api/index.ts` is a single Node function that runs the Hono app. `vercel.json` rewrites `/api/*` to that function, falls back to `index.html` for client routes, and sets CSP/HSTS/caching headers.
+- **Database:** Neon project "OmniDesk", main branch, pooled connection string.
+- **Environment (Production):** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `APP_ORIGIN`. See ENVIRONMENT.md.
+- **Migrations:** run from a trusted machine before deploying schema changes: `DATABASE_URL=<pooled url> npx drizzle-kit migrate`. Migrations are additive; there are no destructive steps in 0000–0002.
+- **Release flow:** pull request → CI (migrate on Postgres 16, typecheck, lint, tests, build) and Vercel preview → merge to `main` → Vercel production deploy.
+- **Smoke test after deploy:** `GET /api/health` returns `{"status":"ok","database":true}`; the demo button opens a seeded workspace; sign-up → create workspace works.
+- Imports inside `src/server` use explicit `.js` extensions so the function bundles as native ESM on Vercel.

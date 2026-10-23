@@ -1,2 +1,2 @@
 # Phase 6 — Documents and exports
-Not implemented. Add storage abstraction, private document metadata and authorization, upload validation, archive/search/tag controls, and tenant-scoped CSV export with correct escaping. Keep core app usable without remote storage.
+Implemented in v1.0: Markdown documents linked to projects and tenant-scoped CSV exports with formula escaping. Not yet: file uploads/object storage.

@@ -1,11 +1,13 @@
 # Product specification
-OmniDesk is a multi-tenant workspace for small businesses to manage customers, projects, tasks, documents, reporting, teams, optional AI, and controlled workflow automation.
 
-## MVP outcomes
-Authentication and organization membership are enforced server-side; roles govern protected operations; customer/project/task changes persist in PostgreSQL; dashboard metrics use tenant-scoped queries; significant changes are audited; optional integrations fail gracefully; documentation reflects verified behavior.
+OmniDesk is a multi-tenant workspace for small service businesses to run customers, projects, tasks, documents and reporting with their team.
+
+## v1.0 scope
+Authentication and workspace membership are enforced on the server; roles govern every protected operation; customers, notes, projects, tasks, documents and activity persist in PostgreSQL; dashboard and reports use tenant-scoped queries; significant changes are recorded in the activity log; a self-serve demo workspace shows the product without sign-up.
 
 ## Roles
-Owner: full organization control. Admin: operations/member management excluding owner-only actions by default. Manager: permitted operational resources. Member: assigned/shared records. Viewer: read-only. Platform administrator is a separate platform role.
-
-## Current boundary
-Only a frontend foundation exists. Module routes are placeholders; auth, persistence, tenant enforcement, and integrations are not implemented.
+- Owner — everything, including managing owners and admins.
+- Admin — team, settings and all records; can't manage owners/admins.
+- Manager — customers, projects, tasks, documents and exports.
+- Member — tasks, notes and documents.
+- Viewer — read-only.

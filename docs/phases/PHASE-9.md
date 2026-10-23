@@ -1,2 +1,2 @@
 # Phase 9 — Testing, hardening and deployment
-Not implemented. Run lint, typecheck, build, migrations, unit/integration and available E2E tests. Test two-tenant isolation and roles; inspect secrets, insecure direct object references, unprotected routes, fake production data and deployment assumptions. Document exact results and blockers.
+Partly done in v1.0: CI (migrate, typecheck, lint, unit + integration tests, build), browser QA, security headers, origin checks, rate limits, production deploy on Vercel + Neon. Not yet: E2E suite in CI, billing.

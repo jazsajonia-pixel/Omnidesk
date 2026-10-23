@@ -1,2 +1,2 @@
 # Phase 4 — Projects, tasks and collaboration
-Not implemented. Add project CRUD, task list/Kanban, persisted status/order, assignments, comments/activity, team role controls, and permission tests including last-owner safety.
+Implemented in v1.0: projects, tasks with Kanban ordering, assignments, priorities, due dates, team roles and last-owner protection.

@@ -1,4 +1,4 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { bigint, boolean, date, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
@@ -55,6 +55,7 @@ export const customers = pgTable("customers", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(), email: text("email"), company: text("company"),
+  phone: text("phone"), status: text("status").notNull().default("active"),
   createdAt: createdAt(), updatedAt: updatedAt(),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
 }, (table) => [
@@ -63,4 +64,69 @@ export const customers = pgTable("customers", {
   index("customers_org_archived_created_idx").on(table.organizationId, table.archivedAt, table.createdAt),
 ]);
 
-export const schema = { user, session, account, verification, organization, member, invitation, customers };
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(), key: text("key").notNull(), count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+}, (table) => [uniqueIndex("rate_limit_key_unique").on(table.key)]);
+
+export const customerNotes = pgTable("customer_notes", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  customerId: text("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  body: text("body").notNull(), createdAt: createdAt(),
+}, (table) => [index("customer_notes_org_customer_idx").on(table.organizationId, table.customerId, table.createdAt)]);
+
+export const projects = pgTable("projects", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
+  name: text("name").notNull(), description: text("description"),
+  status: text("status").notNull().default("planning"), dueDate: date("due_date", { mode: "string" }),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+}, (table) => [
+  index("projects_org_status_idx").on(table.organizationId, table.status),
+  index("projects_org_customer_idx").on(table.organizationId, table.customerId),
+]);
+
+export const tasks = pgTable("tasks", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
+  title: text("title").notNull(), description: text("description"),
+  status: text("status").notNull().default("todo"), priority: text("priority").notNull().default("medium"),
+  assigneeId: text("assignee_id").references(() => user.id, { onDelete: "set null" }),
+  dueDate: date("due_date", { mode: "string" }), position: integer("position").notNull().default(0),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+}, (table) => [
+  index("tasks_org_status_idx").on(table.organizationId, table.status, table.position),
+  index("tasks_org_project_idx").on(table.organizationId, table.projectId),
+  index("tasks_org_assignee_idx").on(table.organizationId, table.assigneeId),
+]);
+
+export const documents = pgTable("documents", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
+  title: text("title").notNull(), body: text("body").notNull().default(""),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+}, (table) => [index("documents_org_updated_idx").on(table.organizationId, table.updatedAt)]);
+
+export const activity = pgTable("activity", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+  action: text("action").notNull(), entityType: text("entity_type").notNull(), entityId: text("entity_id"),
+  summary: text("summary").notNull(), createdAt: createdAt(),
+}, (table) => [index("activity_org_created_idx").on(table.organizationId, table.createdAt)]);
+
+export const schema = {
+  user, session, account, verification, organization, member, invitation, customers, rateLimit,
+  customerNotes, projects, tasks, documents, activity,
+};

@@ -1,3 +1,5 @@
+> Superseded by v1.0 — see README.md and docs/ROADMAP.md for current status.
+
 # Phase 2 status — auth, database, tenant boundary
 
 ## Implemented

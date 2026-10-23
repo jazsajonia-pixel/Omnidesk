@@ -1,12 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import type { Context } from "hono";
-import { auth } from "./auth";
-import { requireDb } from "./db/client";
-import { member } from "./db/schema";
-import type { TenantContext } from "./tenant-context";
-export { isTenantContext, type TenantContext } from "./tenant-context";
+import { auth } from "./auth.js";
+import { requireDb } from "./db/client.js";
+import { member } from "./db/schema.js";
+import { can, type Action } from "./permissions.js";
+import type { TenantContext } from "./tenant-context.js";
+export { isTenantContext, type TenantContext } from "./tenant-context.js";
 
-export async function resolveTenant(c: Context): Promise<TenantContext | Response> {
+export async function resolveTenant(c: Context, action: Action = "read"): Promise<TenantContext | Response> {
   const sessionData = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!sessionData) return c.json({ error: "unauthorized", message: "Sign in is required." }, 401);
   const organizationId = sessionData.session.activeOrganizationId;
@@ -18,5 +19,11 @@ export async function resolveTenant(c: Context): Promise<TenantContext | Respons
     eq(member.organizationId, organizationId), eq(member.userId, sessionData.user.id),
   )).limit(1);
   if (!membership) return c.json({ error: "forbidden", message: "You are not a member of this workspace." }, 403);
-  return { userId: sessionData.user.id, organizationId: membership.organizationId, role: membership.role };
+  if (!can(membership.role, action)) {
+    return c.json({ error: "forbidden", message: "Your role doesn't allow this action. Ask a workspace admin." }, 403);
+  }
+  return {
+    userId: sessionData.user.id, userName: sessionData.user.name,
+    organizationId: membership.organizationId, role: membership.role,
+  };
 }

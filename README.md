@@ -2,34 +2,30 @@
 
 One workspace. Clearer operations.
 
-OmniDesk is a multi-tenant SaaS operations platform. This repository contains an early but CI-verified authentication, workspace, and customer-management foundation; it is not production-ready.
+OmniDesk is a multi-tenant operations workspace for small teams: customers, projects, tasks, documents, reports and team roles in one place. Version 1.0.
 
-## Implemented
-- React + TypeScript + Vite 7 + Tailwind 4 workspace UI
-- Better Auth sign-up/sign-in, organization creation/list/active selection
-- Hono API for Vercel Functions and local Node development
-- PostgreSQL/Drizzle schema and migrations
-- Server-side organization membership checks and tenant-scoped customer endpoints
-- Customer list/search/pagination, create/edit, soft archive/restore, active/archived filters, loading/error/empty/success states
-- Dashboard active-customer count from a tenant-scoped database query
-- PostgreSQL-backed CI integration test for two-tenant isolation
+**Live:** https://omnidesk-blond.vercel.app — use "Explore the live demo" to open a private, pre-filled workspace (deleted after 24 hours) without signing up.
 
-## Verified in CI
-GitHub Actions applies migrations to PostgreSQL 16, then runs typecheck, ESLint, tests, and a production build. Integration coverage verifies separate users/workspaces cannot read each other's customer records and rejects client-supplied organization IDs. It also tests customer update/archive/restore, search, pagination, and tenant-scoped dashboard counts.
+## Features
+- **Accounts and workspaces** — email/password auth (Better Auth), multiple workspaces per user, workspace switcher, invitations by link.
+- **Roles** — owner, admin, manager, member, viewer. Enforced on the server for every endpoint; the UI hides actions you can't take.
+- **Customers** — search, status (lead/active/inactive), archive/restore, a detail panel with notes and linked projects.
+- **Projects** — card grid with progress, deadlines and customer link; a detail page with grouped tasks.
+- **Tasks** — Kanban board with drag-and-drop ordering, list view, filters (assignee, project, priority, overdue/this week), deep links.
+- **Documents** — Markdown editor with live preview, linked to projects; safe rendering (no raw HTML, http/https/mailto links only).
+- **Reports** — weekly throughput chart, status/priority/workload/customer breakdowns, project progress, full activity history.
+- **Everywhere** — command palette (⌘K or /), activity notifications, CSV export (formula-injection safe), light/dark/system theme, responsive down to 320px.
 
-## Not yet verified / not implemented
-- Live Neon configuration and browser/device testing have not been performed.
-- Project/task persistence, customer contacts/notes, audit activity feed, global search, file storage, AI, automations, billing, and production deployment remain future work.
-- npm audit currently reports 4 moderate advisories in development tooling; there are 0 high and 0 critical advisories in the latest checked dependency tree.
+## Stack
+React 18, TypeScript, Vite 7, React Router 7, Hono (one Vercel function), Better Auth with the organization plugin, Drizzle ORM, PostgreSQL (Neon in production), Zod, Vitest.
 
 ## Local development
-Requires Node.js 20+ and npm 10+.
+Requires Node.js 20+ and PostgreSQL.
 
-1. Copy .env.example to .env and set DATABASE_URL plus a random BETTER_AUTH_SECRET.
-2. Run npm install.
-3. Apply migrations to a disposable PostgreSQL database with npm run db:migrate.
-4. Start the API with npm run api:dev.
-5. In another terminal, run npm run dev.
-6. Run npm run typecheck, npm run lint, npm test, and npm run build.
+1. Copy `.env.example` to `.env`; set `DATABASE_URL` and a random `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+2. `npm install`
+3. `npm run db:migrate`
+4. `npm run api:dev` (API on :4000) and, in another terminal, `npm run dev` (app on :5173, proxies `/api`).
+5. Checks: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
 
-For hosted Neon, use the pooled PostgreSQL connection endpoint. See docs/ for architecture, database, security, deployment, and phase details.
+See `docs/` for architecture, database, security, testing, deployment and environment notes.
