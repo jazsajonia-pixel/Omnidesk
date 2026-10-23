@@ -2,8 +2,8 @@ import type { MiddlewareHandler } from "hono";
 
 /**
  * Conservative browser-facing response headers for the API and auth endpoints.
- * Content-Security-Policy and HSTS are intentionally not set here: the SPA is
- * served separately, and HTTPS enforcement belongs to the hosting layer.
+ * The SPA's own headers (including a Content-Security-Policy) are set in
+ * vercel.json; HTTPS enforcement belongs to the hosting layer.
  */
 export const securityHeaders: MiddlewareHandler = async (c, next) => {
   await next();
@@ -12,5 +12,5 @@ export const securityHeaders: MiddlewareHandler = async (c, next) => {
   c.header("Referrer-Policy", "strict-origin-when-cross-origin");
   c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   c.header("Cross-Origin-Resource-Policy", "same-origin");
-  c.header("Cache-Control", "no-store");
+  if (!c.res.headers.has("Cache-Control")) c.header("Cache-Control", "no-store");
 };

@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { app } from "./src/server/app";
+import { app } from "./src/server/app.js";
 
 const port = Number(process.env.API_PORT ?? 4000);
 serve({ fetch: app.fetch, port }, (info) => {
