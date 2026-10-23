@@ -15,10 +15,34 @@ const inviteInput = z.object({ email: z.string().trim().toLowerCase().email("Ent
 const roleInput = z.object({ role: assignableRole }).strict();
 const INVITE_DAYS = 7;
 
-async function ownerCount(organizationId: string) {
-  const [row] = await requireDb().select({ total: count() }).from(member)
+type Database = ReturnType<typeof requireDb>;
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+async function ownerCount(tx: Tx, organizationId: string) {
+  const [row] = await tx.select({ total: count() }).from(member)
     .where(and(eq(member.organizationId, organizationId), eq(member.role, "owner")));
   return Number(row?.total ?? 0);
+}
+
+/**
+ * Role changes and departures run inside a transaction that first locks the
+ * workspace row, so concurrent requests are serialised. Both the actor's and the
+ * target's roles are re-read after the lock: a check made before it could be stale
+ * (two owners demoting each other, or both leaving at once, would otherwise leave
+ * the workspace with no owner).
+ */
+async function withWorkspaceLock<T>(organizationId: string, userId: string, memberId: string, run: (tx: Tx, ctx: {
+  actorRole: string | null; target: { id: string; userId: string; role: string; name: string } | undefined;
+}) => Promise<T>) {
+  return requireDb().transaction(async (tx) => {
+    await tx.select({ id: organization.id }).from(organization).where(eq(organization.id, organizationId)).for("update");
+    const [actor] = await tx.select({ role: member.role }).from(member)
+      .where(and(eq(member.organizationId, organizationId), eq(member.userId, userId))).limit(1);
+    const [target] = await tx.select({ id: member.id, userId: member.userId, role: member.role, name: user.name }).from(member)
+      .innerJoin(user, eq(user.id, member.userId))
+      .where(and(eq(member.id, memberId), eq(member.organizationId, organizationId))).limit(1);
+    return run(tx, { actorRole: actor?.role ?? null, target });
+  });
 }
 
 export const teamRoutes = new Hono();
@@ -30,7 +54,7 @@ teamRoutes.get("/", async (c) => {
   const members = await database.select({
     id: member.id, userId: member.userId, role: member.role, joinedAt: member.createdAt, name: user.name, email: user.email,
   }).from(member).innerJoin(user, eq(user.id, member.userId))
-    .where(eq(member.organizationId, tenant.organizationId)).orderBy(member.createdAt);
+    .where(eq(member.organizationId, tenant.organizationId)).orderBy(member.createdAt, member.id);
   const invitations = can(tenant.role, "team:manage") ? await database.select({
     id: invitation.id, email: invitation.email, role: invitation.role, expiresAt: invitation.expiresAt, createdAt: invitation.createdAt,
   }).from(invitation).where(and(eq(invitation.organizationId, tenant.organizationId), eq(invitation.status, "pending"), gt(invitation.expiresAt, new Date())))
@@ -90,38 +114,37 @@ teamRoutes.patch("/members/:id", async (c) => {
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, roleInput);
   if (!parsed.ok) return parsed.response;
-  const database = requireDb();
-  const [target] = await database.select({ id: member.id, userId: member.userId, role: member.role, name: user.name }).from(member)
-    .innerJoin(user, eq(user.id, member.userId))
-    .where(and(eq(member.id, c.req.param("id")), eq(member.organizationId, tenant.organizationId))).limit(1);
-  if (!target) return notFound(c, "Member");
-  if (!canManageRole(tenant.role, target.role) || !canManageRole(tenant.role, parsed.data.role)) {
-    return forbidden(c, "You can't change this member's role. Only owners manage owners and admins.");
-  }
-  if (normalizeRole(target.role) === "owner" && parsed.data.role !== "owner" && await ownerCount(tenant.organizationId) <= 1) {
-    return c.json({ error: "last_owner", message: "A workspace needs at least one owner. Make someone else an owner first." }, 409);
-  }
-  await database.update(member).set({ role: parsed.data.role }).where(and(eq(member.id, target.id), eq(member.organizationId, tenant.organizationId)));
-  await recordActivity(tenant, { action: "team.role_changed", entityType: "member", entityId: target.id, summary: "changed " + target.name + "'s role to " + parsed.data.role });
-  return c.json({ data: { id: target.id, role: parsed.data.role } });
+  const role = parsed.data.role;
+  const result = await withWorkspaceLock(tenant.organizationId, tenant.userId, c.req.param("id"), async (tx, { actorRole, target }) => {
+    if (!target) return "not_found" as const;
+    if (!actorRole || !can(actorRole, "team:manage") || !canManageRole(actorRole, target.role) || !canManageRole(actorRole, role)) return "forbidden" as const;
+    if (normalizeRole(target.role) === "owner" && role !== "owner" && await ownerCount(tx, tenant.organizationId) <= 1) return "last_owner" as const;
+    await tx.update(member).set({ role }).where(and(eq(member.id, target.id), eq(member.organizationId, tenant.organizationId)));
+    return target;
+  });
+  if (result === "not_found") return notFound(c, "Member");
+  if (result === "forbidden") return forbidden(c, "You can't change this member's role. Only owners manage owners and admins.");
+  if (result === "last_owner") return c.json({ error: "last_owner", message: "A workspace needs at least one owner. Make someone else an owner first." }, 409);
+  await recordActivity(tenant, { action: "team.role_changed", entityType: "member", entityId: result.id, summary: "changed " + result.name + "'s role to " + role });
+  return c.json({ data: { id: result.id, role } });
 });
 
 teamRoutes.delete("/members/:id", async (c) => {
   const tenant = await resolveTenant(c);
   if (!isTenantContext(tenant)) return tenant;
-  const database = requireDb();
-  const [target] = await database.select({ id: member.id, userId: member.userId, role: member.role, name: user.name }).from(member)
-    .innerJoin(user, eq(user.id, member.userId))
-    .where(and(eq(member.id, c.req.param("id")), eq(member.organizationId, tenant.organizationId))).limit(1);
-  if (!target) return notFound(c, "Member");
-  const leaving = target.userId === tenant.userId;
-  if (!leaving && !(can(tenant.role, "team:manage") && canManageRole(tenant.role, target.role))) return forbidden(c, "You can't remove this member.");
-  if (normalizeRole(target.role) === "owner" && await ownerCount(tenant.organizationId) <= 1) {
-    return c.json({ error: "last_owner", message: "The last owner can't leave. Make someone else an owner first." }, 409);
-  }
-  await database.delete(member).where(and(eq(member.id, target.id), eq(member.organizationId, tenant.organizationId)));
-  await recordActivity(tenant, { action: leaving ? "team.left" : "team.removed", entityType: "member", entityId: target.id, summary: leaving ? "left the workspace" : "removed " + target.name + " from the workspace" });
-  return c.json({ data: { id: target.id, left: leaving } });
+  const result = await withWorkspaceLock(tenant.organizationId, tenant.userId, c.req.param("id"), async (tx, { actorRole, target }) => {
+    if (!target || !actorRole) return "not_found" as const;
+    const leaving = target.userId === tenant.userId;
+    if (!leaving && !(can(actorRole, "team:manage") && canManageRole(actorRole, target.role))) return "forbidden" as const;
+    if (normalizeRole(target.role) === "owner" && await ownerCount(tx, tenant.organizationId) <= 1) return "last_owner" as const;
+    await tx.delete(member).where(and(eq(member.id, target.id), eq(member.organizationId, tenant.organizationId)));
+    return { ...target, leaving };
+  });
+  if (result === "not_found") return notFound(c, "Member");
+  if (result === "forbidden") return forbidden(c, "You can't remove this member.");
+  if (result === "last_owner") return c.json({ error: "last_owner", message: "The last owner can't leave. Make someone else an owner first." }, 409);
+  await recordActivity(tenant, { action: result.leaving ? "team.left" : "team.removed", entityType: "member", entityId: result.id, summary: result.leaving ? "left the workspace" : "removed " + result.name + " from the workspace" });
+  return c.json({ data: { id: result.id, left: result.leaving } });
 });
 
 /** Invitation lookups need a signed-in user but not an active workspace. */
@@ -154,12 +177,18 @@ invitationRoutes.post("/:id/accept", async (c) => {
   if (row.email.toLowerCase() !== sessionData.user.email.toLowerCase()) {
     return forbidden(c, "This invitation was sent to a different email address. Sign in with that address to accept it.");
   }
-  const [existing] = await database.select({ id: member.id }).from(member)
-    .where(and(eq(member.organizationId, row.organizationId), eq(member.userId, sessionData.user.id))).limit(1);
-  if (!existing) {
-    await database.insert(member).values({ id: randomUUID(), organizationId: row.organizationId, userId: sessionData.user.id, role: normalizeRole(row.role ?? "member") });
-  }
-  await database.update(invitation).set({ status: "accepted" }).where(eq(invitation.id, row.id));
+  // Claim the invitation atomically so opening the link twice at once can't join twice.
+  const claimed = await database.transaction(async (tx) => {
+    const [claim] = await tx.update(invitation).set({ status: "accepted" })
+      .where(and(eq(invitation.id, row.id), eq(invitation.status, "pending"), gt(invitation.expiresAt, new Date()),
+        sql`lower(${invitation.email}) = ${sessionData.user.email.toLowerCase()}`))
+      .returning({ id: invitation.id });
+    if (!claim) return false;
+    await tx.insert(member).values({ id: randomUUID(), organizationId: row.organizationId, userId: sessionData.user.id, role: normalizeRole(row.role ?? "member") })
+      .onConflictDoNothing({ target: [member.organizationId, member.userId] });
+    return true;
+  });
+  if (!claimed) return c.json({ error: "not_found", message: "This invitation is no longer available." }, 404);
   await recordActivity({ userId: sessionData.user.id, userName: sessionData.user.name, organizationId: row.organizationId, role: row.role ?? "member" }, {
     action: "team.joined", entityType: "member", entityId: sessionData.user.id, summary: "joined the workspace as " + normalizeRole(row.role),
   });

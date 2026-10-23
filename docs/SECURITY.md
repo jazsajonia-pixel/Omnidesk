@@ -17,3 +17,6 @@
 ## Known limits
 - No email verification or password reset yet (no email provider configured).
 - Activity history is append-only by convention, not enforced at the database level.
+
+## Concurrency on team changes
+Role changes and member removal run in one transaction that locks the workspace row (`SELECT … FOR UPDATE` on `organization`), then re-reads both the actor's and the target's role before the last-owner check. Without this, two owners demoting each other or leaving at the same moment could both succeed and leave the workspace with no owner. Invitation acceptance claims the invitation with a single conditional `UPDATE … WHERE status = 'pending' AND expires_at > now() AND lower(email) = …` and inserts the membership with `ON CONFLICT DO NOTHING`, so opening the link twice can't join twice or return a server error. Covered by `operations.integration.test.ts`.

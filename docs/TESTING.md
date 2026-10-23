@@ -8,7 +8,7 @@ Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`. CI runs al
 - `lib/csv.test.ts` — quoting and formula-injection escaping.
 - `tenant.test.ts`, `security-headers.test.ts` — guards and headers.
 - `app.integration.test.ts` — two-tenant customer isolation, search, pagination, archive/restore, dashboard counts.
-- `operations.integration.test.ts` — untrusted-origin rejection; projects, tasks, board move ordering (numeric and `beforeId`/`afterId` anchors with gapped positions, cross-workspace anchors ignored), project progress, reports, documents, CSV export, activity isolation; invitation accept, viewer write denial, role change, last-owner protection; demo workspace creation.
+- `operations.integration.test.ts` — untrusted-origin rejection; projects, tasks, board move ordering (numeric and `beforeId`/`afterId` anchors with gapped positions, cross-workspace anchors ignored), project progress, reports, documents, CSV export, activity isolation; invitation accept, viewer write denial, role change, last-owner protection; concurrent demotions/departures never leave a workspace without an owner (4 rounds each); an invitation opened three times at once joins exactly once; demo workspace creation.
 
 Integration suites need `DATABASE_URL` and `BETTER_AUTH_SECRET` and are skipped otherwise.
 
