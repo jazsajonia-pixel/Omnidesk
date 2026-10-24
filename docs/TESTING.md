@@ -6,9 +6,9 @@ Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`. CI runs al
 - `permissions.test.ts` — role matrix, `canManageRole`, unknown-role fallback.
 - `lib/board.test.ts` — drop/keyboard move planning (neighbour anchors, column edges, no-op moves, gapped positions).
 - `lib/csv.test.ts` — quoting and formula-injection escaping.
-- `tenant.test.ts`, `security-headers.test.ts` — guards and headers.
+- `tenant.test.ts`, `security-headers.test.ts` — tenant guards and response headers, including HTTPS-only HSTS.
 - `app.integration.test.ts` — two-tenant customer isolation, search, pagination, archive/restore, dashboard counts.
-- `operations.integration.test.ts` — untrusted-origin rejection; projects, tasks, board move ordering (numeric and `beforeId`/`afterId` anchors with gapped positions, cross-workspace anchors ignored), project progress, reports, documents, CSV export, activity isolation; invitation accept, viewer write denial, role change, last-owner protection; concurrent demotions/departures never leave a workspace without an owner (4 rounds each); an invitation opened three times at once joins exactly once; demo workspace creation.
+- `operations.integration.test.ts` — untrusted and missing-origin rejection; projects, tasks, board move ordering (numeric and `beforeId`/`afterId` anchors with gapped positions, cross-workspace anchors ignored), project progress, reports, documents, CSV export, activity isolation; invitation accept, viewer write denial, role change, last-owner protection; concurrent demotions/departures never leave a workspace without an owner (4 rounds each); an invitation opened three times at once joins exactly once; demo workspace creation.
 
 Integration suites need `DATABASE_URL` and `BETTER_AUTH_SECRET` and are skipped otherwise. The demo endpoint keeps its hourly per-IP limit in tests, so many local runs against the same database can make the demo test return 429; clear it with `DELETE FROM rate_limit;` (CI starts from a fresh database).
 
