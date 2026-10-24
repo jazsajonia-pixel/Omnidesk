@@ -19,8 +19,9 @@ describe.skipIf(!enabled)("operations suite integration", () => {
       if (separator > 0) jar.set(pair.slice(0, separator), pair.slice(separator + 1));
     }
   }
-  async function request(path: string, options: { method?: string; body?: unknown; jar?: CookieJar; origin?: string } = {}) {
-    const headers = new Headers({ origin: options.origin ?? origin, "content-type": "application/json" });
+  async function request(path: string, options: { method?: string; body?: unknown; jar?: CookieJar; origin?: string | null } = {}) {
+    const headers = new Headers({ "content-type": "application/json" });
+    if (options.origin !== null) headers.set("origin", options.origin ?? origin);
     if (options.jar?.size) headers.set("cookie", [...options.jar.entries()].map(([k, v]) => k + "=" + v).join("; "));
     const response = await app.request(origin + path, { method: options.method ?? "GET", headers, ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }) });
     if (options.jar) updateCookies(options.jar, response);
@@ -44,6 +45,12 @@ describe.skipIf(!enabled)("operations suite integration", () => {
   it("rejects mutating requests from untrusted origins", async () => {
     const a = await owner("OriginCheck");
     const res = await request("/api/customers", { method: "POST", jar: a.jar, origin: "https://evil.example", body: { name: "Nope" } });
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects mutating requests when the Origin header is missing", async () => {
+    const a = await owner("MissingOrigin");
+    const res = await request("/api/customers", { method: "POST", jar: a.jar, origin: null, body: { name: "No origin" } });
     expect(res.status).toBe(403);
   });
 
