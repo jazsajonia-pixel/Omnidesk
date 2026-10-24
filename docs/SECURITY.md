@@ -10,7 +10,7 @@
 - Invitations are bound to the invited email address, expire after 7 days, and can be cancelled.
 - CSV exports escape quotes/newlines and neutralise formula prefixes (`= + - @`, tab, CR).
 - Markdown is rendered as React elements (no `dangerouslySetInnerHTML`); links allow only http(s) and mailto.
-- Headers: CSP (`script-src 'self'`), HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`/`frame-ancestors 'none'`, strict referrer policy, permissions policy; API responses are `no-store`.
+- Browser response headers: SPA routes receive CSP and HSTS from Vercel; API responses receive `X-Content-Type-Options`, `X-Frame-Options: DENY`, strict referrer policy, permissions policy and same-origin resource policy. API responses are `no-store` and emit HSTS when served over HTTPS.
 - Demo workspaces use non-routable `.invalid` emails and are deleted after 24 hours.
 - Secrets live only in server environment variables.
 
