@@ -3,7 +3,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 type CookieJar = Map<string, string>;
 type TestApp = { request: (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response> };
 
-const enabled = Boolean(process.env.DATABASE_URL && process.env.BETTER_AUTH_SECRET);
+const requiredEnvironment = ["DATABASE_URL", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "APP_ORIGIN"] as const;
+const enabled = requiredEnvironment.every((key) => Boolean(process.env[key]?.trim()));
 describe.skipIf(!enabled)("tenant isolation integration", () => {
   let app: TestApp;
   const origin = process.env.BETTER_AUTH_URL ?? "http://localhost:5173";
@@ -12,6 +13,16 @@ describe.skipIf(!enabled)("tenant isolation integration", () => {
   beforeAll(async () => {
     const module = await import("./app");
     app = module.app;
+  });
+
+  it("reports ready only when the required server configuration exists", async () => {
+    const response = await request("/api/health");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: "ok",
+      service: "omnidesk-api",
+      database: true,
+    });
   });
 
   function updateCookies(jar: CookieJar, response: Response) {
