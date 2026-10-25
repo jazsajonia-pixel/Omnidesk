@@ -19,3 +19,11 @@ Before calling a release production-ready, verify each item explicitly:
 - [ ] After an explicitly approved production deployment, verify `GET /api/health` returns `{"status":"ok","database":true}` and test demo workspace creation, sign-up, workspace creation, and tenant isolation.
 - [ ] Check API origin validation, authentication/session behavior, security headers, error responses, responsive layouts, and keyboard/screen-reader accessibility.
 - [ ] Obtain explicit approval before applying migrations to the production database or changing production deployment protection.
+
+
+## Read-only production audit (2026-10-25)
+
+- `GET https://omnidesk-blond.vercel.app/api/health` returned HTTP 500 with `FUNCTION_INVOCATION_FAILED` during this check.
+- The connected Vercel project's environment-variable listing returned no entries and `hiddenProductionEnvCount: 0`. Verify the Production variables directly in Vercel before concluding whether they are absent; never copy secret values into logs or documentation.
+- The current Production deployment still targets `main` at `d801a22`. PR #9 (origin/HTTPS hardening) and PR #10 (dependency/config hardening) remain open and are not live.
+- No production deployment, environment, protection, or database changes were made during this audit.
