@@ -1,7 +1,7 @@
 import { and, count, eq, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { auth } from "./auth.js";
-import { requireDb } from "./db/client.js";
+import { pool, requireDb } from "./db/client.js";
 import { customers } from "./db/schema.js";
 import { trustedOrigins } from "./origins.js";
 import { customerRoutes } from "./routes/customers.js";
@@ -33,13 +33,24 @@ app.use("/api/*", async (c, next) => {
   return next();
 });
 
-app.get("/api/health", (c) => {
-  const ready = missingRequiredServerEnvironment().length === 0;
-  return c.json({
-    status: ready ? "ok" : "not_ready",
-    service: "omnidesk-api",
-    database: Boolean(process.env.DATABASE_URL),
-  }, ready ? 200 : 503);
+app.get("/api/health", async (c) => {
+  if (missingRequiredServerEnvironment().length > 0 || !pool) {
+    return c.json({
+      status: "not_ready",
+      service: "omnidesk-api",
+      database: false,
+    }, 503);
+  }
+  try {
+    await pool.query("SELECT 1");
+    return c.json({ status: "ok", service: "omnidesk-api", database: true });
+  } catch {
+    return c.json({
+      status: "not_ready",
+      service: "omnidesk-api",
+      database: false,
+    }, 503);
+  }
 });
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
