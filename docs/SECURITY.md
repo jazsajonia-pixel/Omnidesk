@@ -13,6 +13,7 @@
 - Headers: CSP (`script-src 'self'`), HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`/`frame-ancestors 'none'`, strict referrer policy, permissions policy; API responses are `no-store`.
 - Demo workspaces use non-routable `.invalid` emails and are deleted after 24 hours.
 - Secrets live only in server environment variables.
+- Production API configuration is validated before auth/database modules load: PostgreSQL URL scheme, minimum 32-character auth secret, origin-only URLs, and HTTPS origins in production. Invalid configuration fails closed with a generic 503.
 
 ## Known limits
 - No email verification or password reset yet (no email provider configured).
