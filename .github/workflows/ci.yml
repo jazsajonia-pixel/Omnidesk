@@ -37,8 +37,8 @@ jobs:
         run: |
           npm audit --json > /tmp/npm-audit.json || true
           node -e 'const a=require("/tmp/npm-audit.json"); const packages=Object.entries(a.vulnerabilities||{}).map(([name,v])=>({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable})); console.log(JSON.stringify({counts:a.metadata?.vulnerabilities,packages},null,2));'
-      - name: Fail on high or critical dependency advisories
-        run: npm audit --audit-level=high
+      - name: Fail on moderate or higher dependency advisories
+        run: npm audit --audit-level=moderate
       - run: npm run db:migrate
       - run: npm run typecheck
       - run: npm run lint
