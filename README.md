@@ -6,6 +6,8 @@ OmniDesk is a multi-tenant operations workspace for small teams: customers, proj
 
 **Live:** https://omnidesk-blond.vercel.app — use "Explore the live demo" to open a private, pre-filled workspace (deleted after 24 hours) without signing up.
 
+> **Deployment status (2026-10-25):** The API health endpoint returned HTTP 500 during the latest read-only check. Do not use the hosted app with real data until production configuration is verified, health/auth flows pass, and tenant isolation is rechecked.
+
 ## Features
 - **Accounts and workspaces** — email/password auth (Better Auth), multiple workspaces per user, workspace switcher, invitations by link.
 - **Roles** — owner, admin, manager, member, viewer. Enforced on the server for every endpoint; the UI hides actions you can't take.
