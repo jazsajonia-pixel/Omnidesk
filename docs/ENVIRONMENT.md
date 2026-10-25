@@ -19,6 +19,7 @@ Never prefix server secrets with `VITE_`.
 
 ## Missing configuration behavior
 
-- The API health endpoint is a readiness check: if any of the four required server variables above is missing, or the database cannot answer `SELECT 1`, it returns HTTP 503 with `status: "not_ready"` rather than reporting the service as healthy.
-- In a Vercel production runtime, the API handler checks configuration before importing authentication/database modules. If configuration is incomplete, API routes return a generic 503 response; they do not fall back to memory-backed authentication.
-- The response intentionally does not reveal which variable is missing. Fix the Production environment in Vercel and redeploy only through the approved release process.
+- The API health endpoint is a readiness check: if a required variable is missing or malformed, or the database cannot answer `SELECT 1`, it returns HTTP 503 with `status: "not_ready"` rather than reporting the service as healthy.
+- Configuration validation checks that `DATABASE_URL` uses PostgreSQL, `BETTER_AUTH_SECRET` has at least 32 characters, and `BETTER_AUTH_URL` plus each comma-separated `APP_ORIGIN` entry is an origin-only HTTP(S) URL. Production auth/browser origins must use HTTPS.
+- In a Vercel production runtime, the API handler checks configuration before importing authentication/database modules. If configuration is incomplete or malformed, API routes return a generic 503 response; they do not fall back to memory-backed authentication.
+- Readiness failure responses intentionally reveal neither variable names nor values. Fix the Production environment in Vercel and redeploy only through the approved release process.
