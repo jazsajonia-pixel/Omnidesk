@@ -31,8 +31,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm install
+          node-version: 24
+      - name: Install locked dependencies
+        run: npm ci
       - name: Summarize dependency advisories
         run: |
           npm audit --json > /tmp/npm-audit.json || true
