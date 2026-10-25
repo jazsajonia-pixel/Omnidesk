@@ -13,7 +13,7 @@ import { taskRoutes } from "./routes/tasks.js";
 import { invitationRoutes, teamRoutes } from "./routes/team.js";
 import { workspaceRoutes } from "./routes/workspace.js";
 import { securityHeaders } from "./security-headers.js";
-import { missingRequiredServerEnvironment } from "./config.js";
+import { serverEnvironmentIssues } from "./config.js";
 import { isTenantContext, resolveTenant } from "./tenant.js";
 
 export const app = new Hono();
@@ -34,7 +34,7 @@ app.use("/api/*", async (c, next) => {
 });
 
 app.get("/api/health", async (c) => {
-  if (missingRequiredServerEnvironment().length > 0 || !pool) {
+  if (serverEnvironmentIssues().length > 0 || !pool) {
     return c.json({
       status: "not_ready",
       service: "omnidesk-api",
