@@ -15,3 +15,10 @@ Copy `.env.example` to `.env` for local work. Never commit real values.
 - `VITE_API_BASE_URL` — reserved; the app calls same-origin `/api`.
 
 Never prefix server secrets with `VITE_`.
+
+
+## Missing configuration behavior
+
+- The API health endpoint is a readiness check: if any of the four required server variables above is missing, it returns HTTP 503 with `status: "not_ready"` rather than reporting the service as healthy.
+- In a Vercel production runtime, the API handler checks configuration before importing authentication/database modules. If configuration is incomplete, API routes return a generic 503 response; they do not fall back to memory-backed authentication.
+- The response intentionally does not reveal which variable is missing. Fix the Production environment in Vercel and redeploy only through the approved release process.
