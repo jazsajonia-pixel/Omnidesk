@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { missingRequiredServerEnvironment } from "../src/server/config.js";
+import { serverEnvironmentIssues } from "../src/server/config.js";
 import { securityHeaders } from "../src/server/security-headers.js";
 
 // Keep a small, safe response available before importing auth/database modules.
@@ -9,7 +9,7 @@ unavailableApp.use("*", securityHeaders);
 unavailableApp.get("/api/health", (c) => c.json({
   status: "not_ready",
   service: "omnidesk-api",
-  database: Boolean(process.env.DATABASE_URL),
+  database: false,
 }, 503));
 unavailableApp.all("*", (c) => c.json({
   error: "service_unavailable",
@@ -21,7 +21,7 @@ unavailableApp.all("*", (c) => c.json({
  * and handled by the Hono app using Web-standard Request/Response objects.
  */
 const handler = async (request: Request): Promise<Response> => {
-  if (process.env.NODE_ENV === "production" && missingRequiredServerEnvironment().length > 0) {
+  if (process.env.NODE_ENV === "production" && serverEnvironmentIssues().length > 0) {
     return unavailableApp.fetch(request);
   }
   const { app } = await import("../src/server/app.js");
