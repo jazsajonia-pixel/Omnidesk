@@ -20,3 +20,10 @@
 
 ## Concurrency on team changes
 Role changes and member removal run in one transaction that locks the workspace row (`SELECT … FOR UPDATE` on `organization`), then re-reads both the actor's and the target's role before the last-owner check. Without this, two owners demoting each other or leaving at the same moment could both succeed and leave the workspace with no owner. Invitation acceptance claims the invitation with a single conditional `UPDATE … WHERE status = 'pending' AND expires_at > now() AND lower(email) = …` and inserts the membership with `ON CONFLICT DO NOTHING`, so opening the link twice can't join twice or return a server error. Covered by `operations.integration.test.ts`.
+
+
+## Dependency audit checkpoint (2026-10-25)
+
+- Upgraded the direct `zod` dependency from 3.25.76 to 4.6.7 to address [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5), a high-severity uncontrolled resource-consumption issue affecting versions before 4.6.6. Zod 4.6.7 is the current patched release verified for this change.
+- The 2026-10-24 CI audit also reported four moderate advisories in the `drizzle-kit` → deprecated `@esbuild-kit/esm-loader` → `@esbuild-kit/core-utils` → nested `esbuild` dependency chain. Those findings remain open for a separate compatible fix; do not use `npm audit fix --force`, which suggested downgrading `drizzle-kit` to 0.18.1.
+- CI now fails on high or critical npm advisories. Moderate advisories remain visible in the audit summary and are not represented as resolved by this checkpoint.
