@@ -63,7 +63,7 @@ documentRoutes.post("/", async (c) => {
   const tenant = await resolveTenant(c, "document:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, documentInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (!await projectBelongs(tenant.organizationId, parsed.data.projectId)) return c.json({ error: "validation_error", message: "Choose a project from this workspace." }, 400);
   const [created] = await requireDb().insert(documents).values({
     id: randomUUID(), organizationId: tenant.organizationId, title: parsed.data.title, body: parsed.data.body ?? "",
@@ -77,7 +77,7 @@ documentRoutes.patch("/:id", async (c) => {
   const tenant = await resolveTenant(c, "document:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, documentUpdateInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (!await projectBelongs(tenant.organizationId, parsed.data.projectId)) return c.json({ error: "validation_error", message: "Choose a project from this workspace." }, 400);
   const values: Partial<typeof documents.$inferInsert> = { updatedAt: new Date(), updatedBy: tenant.userId };
   if (parsed.data.title !== undefined) values.title = parsed.data.title;
