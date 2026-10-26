@@ -1,12 +1,13 @@
 # Testing
 
-Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`. CI runs all of them after applying migrations to PostgreSQL 16.
+Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`. CI runs all of them after applying migrations to PostgreSQL 16. After a deployment, run `OMNIDESK_BASE_URL=https://omnidesk-blond.vercel.app npm run smoke:production` to verify API and database readiness; this is read-only and does not replace browser QA.
 
 ## Automated (Vitest)
 - `permissions.test.ts` — role matrix, `canManageRole`, unknown-role fallback.
 - `lib/board.test.ts` — drop/keyboard move planning (neighbour anchors, column edges, no-op moves, gapped positions).
 - `lib/csv.test.ts` — quoting and formula-injection escaping.
 - `tenant.test.ts`, `security-headers.test.ts` — guards and headers.
+- `production-smoke.test.ts` — HTTPS/origin validation, HTTP failures, malformed readiness payloads, and generic network-error handling for the production smoke check.
 - `app.integration.test.ts` — two-tenant customer isolation, search, pagination, archive/restore, dashboard counts.
 - `operations.integration.test.ts` — untrusted-origin rejection; projects, tasks, board move ordering (numeric and `beforeId`/`afterId` anchors with gapped positions, cross-workspace anchors ignored), project progress, reports, documents, CSV export, activity isolation; invitation accept, viewer write denial, role change, last-owner protection; concurrent demotions/departures never leave a workspace without an owner (4 rounds each); an invitation opened three times at once joins exactly once; demo workspace creation.
 
