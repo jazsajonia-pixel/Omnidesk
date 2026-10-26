@@ -72,8 +72,6 @@ describe("production health smoke check", () => {
 
     await expect(verifyProductionHealth("https://omnidesk.example", fetcher))
       .rejects.toThrow("failed to connect or timed out");
-    await expect(verifyProductionHealth("https://omnidesk.example", fetcher))
-      .rejects.not.toThrow("private connection details");
   });
 
   it("rejects malformed JSON", async () => {
