@@ -10,6 +10,7 @@
     "typecheck": "tsc -b --pretty && tsc --project tsconfig.server.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "smoke:production": "tsx src/server/production-smoke.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
