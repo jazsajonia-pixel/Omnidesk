@@ -79,7 +79,7 @@ teamRoutes.post("/invitations", async (c) => {
   const tenant = await resolveTenant(c, "team:manage");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, inviteInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (!canManageRole(tenant.role, parsed.data.role)) return forbidden(c, "Only an owner can invite admins.");
   const database = requireDb();
   const [existingMember] = await database.select({ id: member.id }).from(member).innerJoin(user, eq(user.id, member.userId))
@@ -113,7 +113,7 @@ teamRoutes.patch("/members/:id", async (c) => {
   const tenant = await resolveTenant(c, "team:manage");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, roleInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const role = parsed.data.role;
   const result = await withWorkspaceLock(tenant.organizationId, tenant.userId, c.req.param("id"), async (tx, { actorRole, target }) => {
     if (!target) return "not_found" as const;
