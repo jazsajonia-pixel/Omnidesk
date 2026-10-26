@@ -5,7 +5,8 @@
 - **Environment (Production):** `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `APP_ORIGIN`. See ENVIRONMENT.md.
 - **Migrations:** run from a trusted machine before deploying schema changes: `DATABASE_URL=<pooled url> npx drizzle-kit migrate`. Migrations are additive; there are no destructive steps in 0000–0002.
 - **Release flow:** pull request → CI (migrate on Postgres 16, typecheck, lint, tests, build) and Vercel preview → merge to `main` → Vercel production deploy.
-- **Smoke test after deploy:** `GET /api/health` returns `{"status":"ok","database":true}`; the demo button opens a seeded workspace; sign-up → create workspace works.
+- **Automated read-only smoke check after deploy:** run `OMNIDESK_BASE_URL=https://omnidesk-blond.vercel.app npm run smoke:production` (PowerShell: `$env:OMNIDESK_BASE_URL="https://omnidesk-blond.vercel.app"; npm run smoke:production`). It exits non-zero unless `/api/health` returns HTTP 2xx and explicitly reports `status: "ok"`, `service: "omnidesk-api"`, and `database: true`. Use the intended public/private access path for protected deployments; never add credentials to the URL.
+- **Manual authenticated smoke checks:** confirm the demo opens a seeded workspace; sign-up → create workspace works; then verify two separate users cannot read or mutate each other’s tenant data. The smoke command checks readiness only; it does not replace browser, auth, tenant-isolation, or accessibility QA.
 - Imports inside `src/server` use explicit `.js` extensions so the function bundles as native ESM on Vercel.
 
 
