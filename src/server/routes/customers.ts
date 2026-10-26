@@ -99,7 +99,7 @@ customerRoutes.post("/", async (c) => {
   const tenant = await resolveTenant(c, "customer:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, customerInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const [created] = await requireDb().insert(customers).values({
     id: randomUUID(), organizationId: tenant.organizationId, name: parsed.data.name,
     email: parsed.data.email || null, company: parsed.data.company || null,
@@ -113,7 +113,7 @@ customerRoutes.patch("/:id", async (c) => {
   const tenant = await resolveTenant(c, "customer:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, customerUpdateInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (Object.keys(parsed.data).length === 0) return c.json({ error: "validation_error", message: "Change at least one field." }, 400);
   const values: Partial<typeof customers.$inferInsert> = { updatedAt: new Date() };
   if (parsed.data.name !== undefined) values.name = parsed.data.name;
@@ -150,7 +150,7 @@ customerRoutes.post("/:id/notes", async (c) => {
   const tenant = await resolveTenant(c, "note:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, noteInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const database = requireDb();
   const [customer] = await database.select({ id: customers.id, name: customers.name }).from(customers).where(and(
     eq(customers.id, c.req.param("id")), eq(customers.organizationId, tenant.organizationId), isNull(customers.archivedAt),
