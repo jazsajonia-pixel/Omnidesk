@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { GET } from "../../api/index.js";
+import { DELETE, GET, OPTIONS, PATCH, POST, PUT } from "../../api/index.js";
 import { serverEnvironmentIssues } from "./config.js";
 
 const required = ["DATABASE_URL", "BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "APP_ORIGIN"] as const;
@@ -10,6 +10,14 @@ const validEnvironment = {
   APP_ORIGIN: "https://omnidesk.example",
 } as NodeJS.ProcessEnv;
 const environmentKeys = ["NODE_ENV", ...required] as const;
+const apiMethods = [
+  ["GET", GET],
+  ["POST", POST],
+  ["PATCH", PATCH],
+  ["PUT", PUT],
+  ["DELETE", DELETE],
+  ["OPTIONS", OPTIONS],
+] as const;
 const originalEnvironment = new Map<string, string | undefined>();
 
 beforeEach(() => {
@@ -91,15 +99,17 @@ describe("production API configuration guard", () => {
     });
   });
 
-  it("blocks other API routes with a generic response before auth or database initialization", async () => {
-    const response = await GET(new Request("https://omnidesk.example/api/me"));
-    expect(response.status).toBe(503);
-    const body = await response.json() as { error: string; message: string };
-    expect(body).toEqual({
-      error: "service_unavailable",
-      message: "Server configuration is incomplete.",
-    });
-    expect(JSON.stringify(body)).not.toContain("DATABASE_URL");
-    expect(JSON.stringify(body)).not.toContain("BETTER_AUTH_SECRET");
+  it("blocks every API method with a generic response before auth or database initialization", async () => {
+    for (const [method, handler] of apiMethods) {
+      const response = await handler(new Request("https://omnidesk.example/api/me", { method }));
+      expect(response.status).toBe(503);
+      const body = await response.json() as { error: string; message: string };
+      expect(body).toEqual({
+        error: "service_unavailable",
+        message: "Server configuration is incomplete.",
+      });
+      expect(JSON.stringify(body)).not.toContain("DATABASE_URL");
+      expect(JSON.stringify(body)).not.toContain("BETTER_AUTH_SECRET");
+    }
   });
 });
