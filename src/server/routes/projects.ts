@@ -94,7 +94,7 @@ projectRoutes.post("/", async (c) => {
   const tenant = await resolveTenant(c, "project:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, projectInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (!await customerBelongs(tenant, parsed.data.customerId)) return c.json({ error: "validation_error", message: "Choose a customer from this workspace." }, 400);
   const [created] = await requireDb().insert(projects).values({
     id: randomUUID(), organizationId: tenant.organizationId, name: parsed.data.name,
@@ -109,7 +109,7 @@ projectRoutes.patch("/:id", async (c) => {
   const tenant = await resolveTenant(c, "project:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, projectUpdateInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (Object.keys(parsed.data).length === 0) return c.json({ error: "validation_error", message: "Change at least one field." }, 400);
   if (!await customerBelongs(tenant, parsed.data.customerId)) return c.json({ error: "validation_error", message: "Choose a customer from this workspace." }, 400);
   const values: Partial<typeof projects.$inferInsert> = { updatedAt: new Date() };
