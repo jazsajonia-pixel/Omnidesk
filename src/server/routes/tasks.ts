@@ -107,7 +107,7 @@ taskRoutes.post("/", async (c) => {
   const tenant = await resolveTenant(c, "task:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, taskInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const refError = await validateRefs(tenant, parsed.data);
   if (refError) return c.json({ error: "validation_error", message: refError }, 400);
   const status = parsed.data.status ?? "todo";
@@ -126,7 +126,7 @@ taskRoutes.patch("/:id", async (c) => {
   const tenant = await resolveTenant(c, "task:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, taskUpdateInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   if (Object.keys(parsed.data).length === 0) return c.json({ error: "validation_error", message: "Change at least one field." }, 400);
   const refError = await validateRefs(tenant, parsed.data);
   if (refError) return c.json({ error: "validation_error", message: refError }, 400);
@@ -159,7 +159,7 @@ taskRoutes.post("/:id/move", async (c) => {
   const tenant = await resolveTenant(c, "task:write");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, moveInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const database = requireDb();
   const result = await database.transaction(async (tx) => {
     const [existing] = await tx.select({ id: tasks.id, status: tasks.status, title: tasks.title }).from(tasks)

@@ -26,8 +26,10 @@ describe.skipIf(!enabled)("tenant isolation integration", () => {
   function cookieHeader(jar: CookieJar) {
     return [...jar.entries()].map(([key, value]) => key + "=" + value).join("; ");
   }
-  async function request(path: string, options: { method?: string; body?: unknown; jar?: CookieJar } = {}) {
-    const headers = new Headers({ origin, "content-type": "application/json" });
+  async function request(path: string, options: { method?: string; body?: unknown; jar?: CookieJar; originHeader?: string | null } = {}) {
+    const headers = new Headers({ "content-type": "application/json" });
+    const requestOrigin = options.originHeader === undefined ? origin : options.originHeader;
+    if (requestOrigin) headers.set("origin", requestOrigin);
     if (options.jar?.size) headers.set("cookie", cookieHeader(options.jar));
     const response = await app.request(origin + path, {
       method: options.method ?? "GET", headers,
@@ -56,6 +58,29 @@ describe.skipIf(!enabled)("tenant isolation integration", () => {
     expect(active.status, "workspace should become active").toBeLessThan(300);
     return { jar, organizationId: organization.id as string };
   }
+
+  it("rejects state-changing API requests when Origin is missing or untrusted", async () => {
+    const missingOrigin = await request("/api/customers", {
+      method: "POST",
+      originHeader: null,
+      body: { name: "Blocked without Origin" },
+    });
+    expect(missingOrigin.status).toBe(403);
+    expect(await missingOrigin.json()).toMatchObject({ error: "forbidden_origin" });
+
+    const untrustedOrigin = await request("/api/customers", {
+      method: "POST",
+      originHeader: "https://attacker.example",
+      body: { name: "Blocked from untrusted Origin" },
+    });
+    expect(untrustedOrigin.status).toBe(403);
+    expect(await untrustedOrigin.json()).toMatchObject({ error: "forbidden_origin" });
+  });
+
+  it("allows read-only API requests without an Origin header", async () => {
+    const response = await request("/api/does-not-exist", { originHeader: null });
+    expect(response.status).toBe(404);
+  });
 
   it("scopes customer search, pagination, detail, writes, archive, restore, and dashboard counts to the active organization", async () => {
     const first = await createUserAndWorkspace("TenantA");

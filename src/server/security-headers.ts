@@ -12,5 +12,8 @@ export const securityHeaders: MiddlewareHandler = async (c, next) => {
   c.header("Referrer-Policy", "strict-origin-when-cross-origin");
   c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   c.header("Cross-Origin-Resource-Policy", "same-origin");
+  if (new URL(c.req.url).protocol === "https:") {
+    c.header("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+  }
   if (!c.res.headers.has("Cache-Control")) c.header("Cache-Control", "no-store");
 };
