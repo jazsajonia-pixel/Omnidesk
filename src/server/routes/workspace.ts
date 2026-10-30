@@ -32,7 +32,7 @@ workspaceRoutes.patch("/", async (c) => {
   const tenant = await resolveTenant(c, "workspace:manage");
   if (!isTenantContext(tenant)) return tenant;
   const parsed = await parseBody(c, renameInput);
-  if (!parsed.ok) return parsed.response;
+  if (parsed.ok === false) return parsed.response;
   const [updated] = await requireDb().update(organization).set({ name: parsed.data.name })
     .where(eq(organization.id, tenant.organizationId)).returning({ id: organization.id, name: organization.name });
   await recordActivity(tenant, { action: "workspace.renamed", entityType: "workspace", entityId: updated.id, summary: "renamed the workspace to " + updated.name });
