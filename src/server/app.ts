@@ -27,8 +27,8 @@ app.use("/api/*", async (c, next) => {
   const method = c.req.method;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS" || c.req.path.startsWith("/api/auth/")) return next();
   const origin = c.req.header("origin");
-  if (origin && !trustedOrigins().includes(origin.replace(/\/$/, ""))) {
-    return c.json({ error: "forbidden_origin", message: "This request came from an untrusted origin." }, 403);
+  if (!origin || !trustedOrigins().includes(origin.replace(/\/$/, ""))) {
+    return c.json({ error: "forbidden_origin", message: "A trusted origin is required for this request." }, 403);
   }
   return next();
 });
