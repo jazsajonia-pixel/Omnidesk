@@ -9,7 +9,7 @@ Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`. CI runs al
 - `tenant.test.ts`, `security-headers.test.ts` — guards and headers.
 - `config.test.ts` — required server configuration validation, production HTTPS enforcement, secret-safe errors, and fail-closed responses across GET, POST, PATCH, PUT, DELETE, and OPTIONS when configuration is invalid.
 - `production-smoke.test.ts` — HTTPS/origin validation, HTTP failures, malformed readiness payloads, and generic network-error handling for the production smoke check.
-- `app.integration.test.ts` — two-tenant customer isolation, search, pagination, archive/restore, dashboard counts.
+- `app.integration.test.ts` — missing/untrusted-Origin rejection for state-changing non-auth API requests, read-only requests without Origin, two-tenant customer isolation, search, pagination, archive/restore, dashboard counts.
 - `operations.integration.test.ts` — untrusted-origin rejection; projects, tasks, board move ordering (numeric and `beforeId`/`afterId` anchors with gapped positions, cross-workspace anchors ignored), project progress, reports, documents, CSV export, activity isolation; invitation accept, viewer write denial, role change, last-owner protection; concurrent demotions/departures never leave a workspace without an owner (4 rounds each); an invitation opened three times at once joins exactly once; demo workspace creation.
 
 Integration suites need `DATABASE_URL` and `BETTER_AUTH_SECRET` and are skipped otherwise. The demo endpoint keeps its hourly per-IP limit in tests, so many local runs against the same database can make the demo test return 429; clear it with `DELETE FROM rate_limit;` (CI starts from a fresh database).
