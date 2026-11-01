@@ -4,7 +4,7 @@ One workspace. Clearer operations.
 
 OmniDesk is a multi-tenant operations workspace for small teams: customers, projects, tasks, documents, reports and team roles in one place. Version 1.0.
 
-**Live:** https://omnidesk-blond.vercel.app — use "Explore the live demo" to open a private, pre-filled workspace (deleted after 24 hours) without signing up.
+**Demo:** https://omnidesk-blond.vercel.app — the Production `/api/health` endpoint returned HTTP 500 on 2026-11-01, so the pre-filled demo workspace may be unavailable. Production health and demo access need to be reverified before relying on the live demo.
 
 ## Features
 - **Accounts and workspaces** — email/password auth (Better Auth), multiple workspaces per user, workspace switcher, invitations by link.
