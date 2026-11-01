@@ -32,13 +32,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Refresh lockfile for security verification (temporary)
-        run: npm install --package-lock-only --ignore-scripts
-      - name: Upload refreshed lockfile (temporary)
-        uses: actions/upload-artifact@v4
-        with:
-          name: omnidesk-lockfile-${{ github.sha }}
-          path: package-lock.json
       - name: Install locked dependencies
         run: npm ci
       - name: Summarize dependency advisories
