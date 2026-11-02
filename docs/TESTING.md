@@ -6,7 +6,7 @@ Run `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`. CI runs al
 - `permissions.test.ts` — role matrix, `canManageRole`, unknown-role fallback.
 - `lib/board.test.ts` — drop/keyboard move planning (neighbour anchors, column edges, no-op moves, gapped positions).
 - `lib/csv.test.ts` — quoting and formula-injection escaping.
-- `tenant.test.ts`, `security-headers.test.ts` — guards and headers.
+- `tenant.test.ts`, `security-headers.test.ts` — tenant guards and response headers, including HTTPS-only HSTS.
 - `config.test.ts` — required server configuration validation, production HTTPS enforcement, secret-safe errors, and fail-closed responses across GET, POST, PATCH, PUT, DELETE, and OPTIONS when configuration is invalid.
 - `production-smoke.test.ts` — HTTPS/origin validation, HTTP failures, malformed readiness payloads, and generic network-error handling for the production smoke check.
 - `app.integration.test.ts` — missing/untrusted-Origin rejection for state-changing non-auth API requests, read-only requests without Origin, two-tenant customer isolation, search, pagination, archive/restore, dashboard counts.
