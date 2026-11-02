@@ -4,9 +4,9 @@ One workspace. Clearer operations.
 
 OmniDesk is a multi-tenant operations workspace for small teams: customers, projects, tasks, documents, reports and team roles in one place. Version 1.0.
 
-**Live:** https://omnidesk-blond.vercel.app — use "Explore the live demo" to open a private, pre-filled workspace (deleted after 24 hours) without signing up.
+**Live:** https://omnidesk-blond.vercel.app — the homepage is reachable, but the API is currently unhealthy; do not use the hosted app with real data.
 
-> **Deployment status (2026-10-26):** A read-only request to `/api/health` still returns HTTP 500 (`FUNCTION_INVOCATION_FAILED`). The connected Vercel environment-variable listing returned no entries; verify Production settings in the dashboard before concluding variables are absent. Do not use the hosted app with real data until configuration, health/auth flows, and tenant isolation are verified.
+> **Deployment status (2026-11-02):** The Production homepage returns HTTP 200, but `/api/health` returns HTTP 500 (`FUNCTION_INVOCATION_FAILED`). The active Production deployment is sourced from unmerged PR #9 at `8e6c86e`, not `main`. The connected Vercel environment inventory lists no Production-targeted entries for the required server variables. PR #10 is the consolidated security release candidate; its Preview API health returns HTTP 200 with `database: true`, but Preview success does not establish Production readiness. Do not use Production with real data until Production configuration, authenticated flows, and tenant isolation are verified and the release is approved.
 
 ## Features
 - **Accounts and workspaces** — email/password auth (Better Auth), multiple workspaces per user, workspace switcher, invitations by link.
